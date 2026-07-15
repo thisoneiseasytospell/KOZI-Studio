@@ -17,9 +17,9 @@
 :root {
   --bg: #f1f0eb;
   --intro-bg: #f1f0eb;
-  --intro-text: #050505;
-  --text: #050505;
-  --muted: #050505;
+  --intro-text: #ff0000;
+  --text: #ff0000;
+  --muted: #ff0000;
   --surface: #050505;
   --glass-pad: 16px;
   --info-gap: 12px;
