@@ -149,16 +149,20 @@ p {
 }
 
 .intro-headline,
-.intro-details {
+.intro-details,
+.intro-collapse {
   color: var(--text);
   font-family: "ABC Diatype", Arial, sans-serif;
-  font-size: inherit;
-  font-stretch: inherit;
+  font-feature-settings: "kern" 1, "liga" 1;
+  font-kerning: normal;
+  font-size: 12px;
+  font-stretch: 95%;
   font-style: normal;
   font-weight: 400;
-  letter-spacing: inherit;
-  line-height: inherit;
-  word-spacing: inherit;
+  letter-spacing: 0;
+  line-height: 1;
+  text-rendering: geometricPrecision;
+  word-spacing: -0.05em;
 }
 
 .intro-headline {
@@ -533,7 +537,6 @@ main {
   }
 
   .intro-collapse {
-    font-size: 0.9em;
     min-height: 32px;
   }
 
