@@ -183,20 +183,29 @@ if (stage && frame && videos.length === 2 && projectLabel && projectNumber && pr
 }
 
 async function setupWorkStage() {
-  const response = await fetch("./assets/videos/manifest.json");
+  const response = await fetch("./assets/videos/manifest.json?v=2");
 
   if (!response.ok) {
     throw new Error(`Unable to load video manifest: ${response.status}`);
   }
 
   const manifest = await response.json();
+  const compactVideo = window.matchMedia("(max-width: 760px), (hover: none), (pointer: coarse)");
+  const normalizeVideoPath = (path) => {
+    if (!path) {
+      return "";
+    }
+
+    return path.startsWith(".") ? path : `./${path}`;
+  };
   const projects = manifest
-    .filter((project) => project.localPath && project.title)
+    .filter((project) => (project.desktopPath || project.mobilePath || project.localPath) && project.title)
     .map((project, index) => ({
       index,
       order: Number(project.order) || index + 1,
       title: project.title,
-      src: project.localPath.startsWith(".") ? project.localPath : `./${project.localPath}`,
+      desktopSrc: normalizeVideoPath(project.desktopPath || project.localPath || project.mobilePath),
+      mobileSrc: normalizeVideoPath(project.mobilePath || project.desktopPath || project.localPath),
     }));
 
   if (projects.length === 0) {
@@ -214,6 +223,7 @@ async function setupWorkStage() {
   let queuedProjectIndex = -1;
   let queuedReady = false;
   let queuedLoading = false;
+  let initialQueueStarted = false;
   let switchRequest = null;
   let stageVisible = false;
   let travelAccumulator = 0;
@@ -256,6 +266,10 @@ async function setupWorkStage() {
   const idleTrailMinimumDuration = 5200;
   const idleTrailMaximumDuration = 45000;
   const idleTrailRampDuration = 12000;
+
+  function videoSource(project) {
+    return compactVideo.matches ? project.mobileSrc : project.desktopSrc;
+  }
 
   const trailCanvases = reduceMotion
     ? []
@@ -437,7 +451,8 @@ async function setupWorkStage() {
     video.setAttribute("aria-hidden", "true");
     video.setAttribute("aria-label", project.title);
     video.dataset.projectIndex = String(projectIndex);
-    video.src = project.src;
+    video.preload = "auto";
+    video.src = videoSource(project);
     video.load();
 
     return new Promise((resolve, reject) => {
@@ -526,12 +541,36 @@ async function setupWorkStage() {
     }
   }
 
+  function queueInitialNextVideo() {
+    if (initialQueueStarted) {
+      return;
+    }
+
+    initialQueueStarted = true;
+    queueNextVideo(nextAscendingProjectIndex());
+  }
+
+  function queueInitialNextVideoNearMidpoint(video) {
+    if (
+      initialQueueStarted ||
+      video !== videos[activeSlotIndex] ||
+      !Number.isFinite(video.duration) ||
+      video.duration <= 0 ||
+      video.currentTime < video.duration * 0.5
+    ) {
+      return;
+    }
+
+    queueInitialNextVideo();
+  }
+
   function switchVideo(mode = "ascending", requestedProjectIndex = null) {
     const desiredProjectIndex =
       requestedProjectIndex ?? projectIndexForMode(mode);
 
     if (!queuedReady || queuedProjectIndex !== desiredProjectIndex) {
       switchRequest = { mode, projectIndex: desiredProjectIndex };
+      initialQueueStarted = true;
 
       if (queuedProjectIndex !== desiredProjectIndex || !queuedLoading) {
         queueNextVideo(desiredProjectIndex);
@@ -565,6 +604,10 @@ async function setupWorkStage() {
   }
 
   videos.forEach((video) => {
+    video.addEventListener("timeupdate", () => {
+      queueInitialNextVideoNearMidpoint(video);
+    });
+
     video.addEventListener("ended", () => {
       if (video !== videos[activeSlotIndex]) {
         return;
@@ -1383,6 +1426,9 @@ async function setupWorkStage() {
   stage.classList.add("is-ready");
   hideLoading();
   playActiveVideo();
-  queueNextVideo(nextAscendingProjectIndex());
+  stage.addEventListener("pointermove", queueInitialNextVideo, { once: true, passive: true });
+  stage.addEventListener("pointerdown", queueInitialNextVideo, { once: true, passive: true });
+  stage.addEventListener("touchstart", queueInitialNextVideo, { once: true, passive: true });
+  stage.addEventListener("keydown", queueInitialNextVideo, { once: true });
   animateFrame();
 }
