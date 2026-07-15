@@ -1,6 +1,5 @@
 .DS_Store
 .env*
-!.env.example
 
 # Local-only internship archive
 /internship/
