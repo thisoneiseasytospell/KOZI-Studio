@@ -242,12 +242,19 @@ p {
 }
 
 .detail-reveal {
+  filter: blur(7px);
+  opacity: 0;
   transform: translateY(10px);
-  transition: transform 640ms var(--reveal-ease);
+  transition:
+    opacity 520ms linear,
+    filter 640ms var(--reveal-ease),
+    transform 640ms var(--reveal-ease);
   transition-delay: calc(var(--reveal-reverse, 0) * 18ms);
 }
 
 .site-intro.is-expanded .detail-reveal {
+  filter: none;
+  opacity: 1;
   transform: none;
   transition-delay: calc(70ms + var(--reveal-index, 0) * 28ms);
 }
