@@ -302,19 +302,84 @@ p {
 }
 
 .copyright {
-  bottom: var(--page-pad);
-  left: var(--page-pad);
+  background: transparent;
+  border: 0;
+  bottom: calc(var(--page-pad) - 8px);
+  cursor: pointer;
+  font: inherit;
+  left: calc(var(--page-pad) - 8px);
   opacity: 0;
+  padding: 8px;
   pointer-events: none;
   position: fixed;
   right: auto;
+  text-align: left;
   transform: translateY(4px);
   transition: opacity 220ms linear, transform 480ms var(--reveal-ease);
+  z-index: 12;
 }
 
 .site-intro.is-expanded .copyright {
   opacity: 1;
+  pointer-events: auto;
   transform: translateY(0);
+}
+
+.copyright:hover {
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 2px;
+}
+
+.copyright:focus-visible {
+  outline: 1px solid currentColor;
+  outline-offset: 4px;
+}
+
+.collective-receipt {
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  background: rgba(241, 240, 235, 0.68);
+  border-radius: 4px;
+  bottom: calc(var(--page-pad) + 22px);
+  display: grid;
+  gap: 3px;
+  left: calc(var(--page-pad) - 8px);
+  min-width: min(238px, calc(100vw - var(--page-pad) * 2));
+  opacity: 0;
+  padding: 7px 8px 8px;
+  pointer-events: none;
+  position: fixed;
+  transform: translateY(4px);
+  transition:
+    opacity 180ms linear,
+    transform 420ms var(--reveal-ease),
+    visibility 0s linear 420ms;
+  visibility: hidden;
+  z-index: 11;
+}
+
+.collective-receipt.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+  transition:
+    opacity 180ms linear,
+    transform 420ms var(--reveal-ease),
+    visibility 0s linear;
+  visibility: visible;
+}
+
+.collective-row {
+  display: grid;
+  gap: 24px;
+  grid-template-columns: 1fr auto;
+}
+
+.collective-value {
+  font-feature-settings: "kern" 1, "liga" 1, "tnum" 1;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  white-space: nowrap;
 }
 
 main {
@@ -545,7 +610,8 @@ main {
 @media (prefers-reduced-motion: reduce) {
   .intro-follow,
   .intro-details-wrap,
-  .copyright {
+  .copyright,
+  .collective-receipt {
     transition-duration: 0.01ms;
   }
 

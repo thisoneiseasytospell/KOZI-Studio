@@ -3,6 +3,24 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-S1PJVNMKWL"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag() { dataLayer.push(arguments); }
+      gtag("js", new Date());
+      gtag("config", "G-S1PJVNMKWL");
+    </script>
+
+    <!-- Vercel Web Analytics and Speed Insights -->
+    <script>
+      window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
+      window.si = window.si || function () { (window.siq = window.siq || []).push(arguments); };
+    </script>
+    <script defer src="/_vercel/insights/script.js"></script>
+    <script defer src="/_vercel/speed-insights/script.js"></script>
+
     <title>KOZI Studio | Albert Kozikowski</title>
     <meta
       name="description"
@@ -55,7 +73,8 @@
     >
     <link rel="apple-touch-icon" href="./apple-touch-icon.png">
     <link rel="preload" href="./assets/fonts/ABCDiatype-Regular.otf" as="font" type="font/otf" crossorigin>
-    <link rel="stylesheet" href="./css/style.css?v=34">
+    <link rel="stylesheet" href="./css/style.css?v=35">
+    <script src="./js/collective.js?v=1" defer></script>
     <script src="./js/app.js?v=33" defer></script>
     <script type="application/ld+json">
       {
@@ -133,7 +152,34 @@
           </div>
         </div>
       </div>
-      <p class="copyright">&copy;2026</p>
+      <button
+        class="copyright"
+        type="button"
+        aria-expanded="false"
+        aria-controls="collective-receipt"
+        data-collective-trigger
+      >
+        <span aria-hidden="true">&copy;2026</span>
+        <span class="visually-hidden">Show collective visitor totals</span>
+      </button>
+
+      <aside
+        class="collective-receipt"
+        id="collective-receipt"
+        aria-label="Collective visitor totals"
+        aria-hidden="true"
+        inert
+        data-collective-receipt
+      >
+        <p class="collective-row">
+          <span>time together</span>
+          <span class="collective-value" data-collective-time>&hellip;</span>
+        </p>
+        <p class="collective-row">
+          <span>countries reached</span>
+          <span class="collective-value" data-collective-countries>&hellip;</span>
+        </p>
+      </aside>
     </header>
 
     <main>
