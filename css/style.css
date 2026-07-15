@@ -180,6 +180,7 @@ p {
 
 .intro-follow {
   color: var(--intro-text);
+  font-size: 0.9em;
   left: 0;
   opacity: 0;
   pointer-events: none;
@@ -297,6 +298,7 @@ p {
   background: transparent;
   border: 0;
   cursor: pointer;
+  font-size: 0.9em;
   padding: 0;
   text-align: left;
   width: max-content;
@@ -517,7 +519,6 @@ main {
 
   .intro-follow {
     display: block;
-    font-size: 0.9em;
     margin-top: 8px;
     opacity: 1;
     position: static;

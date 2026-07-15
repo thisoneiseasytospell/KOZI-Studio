@@ -5,19 +5,25 @@ const hoverCapable = window.matchMedia("(hover: hover) and (pointer: fine)");
 const coarsePointer = window.matchMedia("(pointer: coarse)");
 
 function setupPresenceFavicon() {
-  const favicon = document.querySelector("[data-presence-favicon]");
+  const favicons = Array.from(document.querySelectorAll("[data-presence-favicon]"));
 
-  if (!favicon) {
+  if (favicons.length === 0) {
     return;
   }
 
   function updateFavicon() {
-    favicon.href = document.hidden
-      ? favicon.dataset.inactiveHref
-      : favicon.dataset.activeHref;
+    const isInactive = document.hidden || !document.hasFocus();
+
+    favicons.forEach((favicon) => {
+      favicon.href = isInactive
+        ? favicon.dataset.inactiveHref
+        : favicon.dataset.activeHref;
+    });
   }
 
   document.addEventListener("visibilitychange", updateFavicon);
+  window.addEventListener("focus", updateFavicon);
+  window.addEventListener("blur", updateFavicon);
   updateFavicon();
 }
 
