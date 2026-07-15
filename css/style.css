@@ -17,9 +17,9 @@
 :root {
   --bg: #f1f0eb;
   --intro-bg: #f1f0eb;
-  --intro-text: #ff0000;
-  --text: #ff0000;
-  --muted: #ff0000;
+  --text: #050505;
+  --intro-text: var(--text);
+  --muted: var(--text);
   --surface: #050505;
   --glass-pad: 16px;
   --info-gap: 12px;
@@ -148,6 +148,19 @@ p {
   outline-offset: 4px;
 }
 
+.intro-headline,
+.intro-details {
+  color: var(--text);
+  font-family: "ABC Diatype", Arial, sans-serif;
+  font-size: inherit;
+  font-stretch: inherit;
+  font-style: normal;
+  font-weight: 400;
+  letter-spacing: inherit;
+  line-height: inherit;
+  word-spacing: inherit;
+}
+
 .intro-headline {
   display: block;
 }
@@ -190,14 +203,10 @@ p {
 .intro-details-wrap {
   display: grid;
   grid-template-rows: 0fr;
-  opacity: 0;
   pointer-events: none;
   position: static;
-  transform: translateY(-5px);
   transition:
     grid-template-rows 720ms var(--reveal-ease),
-    opacity 220ms linear,
-    transform 720ms var(--reveal-ease),
     visibility 0s linear 720ms;
   visibility: hidden;
   width: auto;
@@ -205,22 +214,16 @@ p {
 
 .site-intro.is-expanded .intro-details-wrap {
   grid-template-rows: 1fr;
-  opacity: 1;
   pointer-events: auto;
-  transform: none;
   transition:
     grid-template-rows 720ms var(--reveal-ease),
-    opacity 300ms linear 50ms,
-    transform 720ms var(--reveal-ease),
     visibility 0s linear;
   visibility: visible;
 }
 
 .site-intro.is-closing .intro-details-wrap {
   grid-template-rows: 1fr;
-  opacity: 1;
   pointer-events: none;
-  transform: none;
   transition: none;
   visibility: visible;
 }
@@ -235,19 +238,12 @@ p {
 }
 
 .detail-reveal {
-  filter: blur(7px);
-  opacity: 0;
   transform: translateY(10px);
-  transition:
-    opacity 520ms linear,
-    filter 640ms var(--reveal-ease),
-    transform 640ms var(--reveal-ease);
+  transition: transform 640ms var(--reveal-ease);
   transition-delay: calc(var(--reveal-reverse, 0) * 18ms);
 }
 
 .site-intro.is-expanded .detail-reveal {
-  filter: none;
-  opacity: 1;
   transform: none;
   transition-delay: calc(70ms + var(--reveal-index, 0) * 28ms);
 }
