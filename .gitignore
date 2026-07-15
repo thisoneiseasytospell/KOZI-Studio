@@ -1,1 +1,7 @@
 .DS_Store
+
+# Local-only internship archive
+/internship/
+/css/internship.css
+/js/internship.js
+/assets/internship-videos/
