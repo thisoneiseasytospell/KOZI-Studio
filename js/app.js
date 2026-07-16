@@ -51,9 +51,7 @@ function setupIntroDisclosure() {
   }
 
   const revealItems = Array.from(details.querySelectorAll(".detail-reveal"));
-  const collapseLead = reduceMotion ? 0 : 180;
   let isExpanded = false;
-  let closeTimer;
   let hasFollowPosition = false;
   let followTarget = { x: 0, y: 0 };
   let followPosition = { ...followTarget };
@@ -63,30 +61,12 @@ function setupIntroDisclosure() {
     item.style.setProperty("--reveal-reverse", String(revealItems.length - index - 1));
   });
 
-  function updateIntro({ immediate = false } = {}) {
-    window.clearTimeout(closeTimer);
+  function updateIntro() {
     trigger.setAttribute("aria-expanded", String(isExpanded));
     details.setAttribute("aria-hidden", String(!isExpanded));
     details.inert = !isExpanded;
     followLabel.textContent = "Read more";
-
-    if (isExpanded) {
-      intro.classList.remove("is-closing");
-      intro.classList.add("is-expanded");
-      return;
-    }
-
-    intro.classList.remove("is-expanded");
-
-    if (immediate || reduceMotion) {
-      intro.classList.remove("is-closing");
-      return;
-    }
-
-    intro.classList.add("is-closing");
-    closeTimer = window.setTimeout(() => {
-      intro.classList.remove("is-closing");
-    }, collapseLead);
+    intro.classList.toggle("is-expanded", isExpanded);
   }
 
   function updateFollowTarget(event) {
@@ -161,7 +141,7 @@ function setupIntroDisclosure() {
     updateIntro();
   });
 
-  updateIntro({ immediate: true });
+  updateIntro();
 
   if (hoverCapable.matches) {
     animateFollowLabel();
@@ -223,7 +203,6 @@ async function setupWorkStage() {
     .sort((firstIndex, secondIndex) => {
       return projects[firstIndex].order - projects[secondIndex].order;
     });
-  let randomDeck = [];
   let activeSlotIndex = 0;
   let currentProjectIndex = -1;
   let queuedProjectIndex = -1;
@@ -232,7 +211,6 @@ async function setupWorkStage() {
   let initialQueueStarted = false;
   let switchRequest = null;
   let stageVisible = false;
-  let travelAccumulator = 0;
   let loadTokens = [0, 0];
   let pointerPosition = null;
   let pointerActive = false;
@@ -249,6 +227,21 @@ async function setupWorkStage() {
   let motionOrigin = null;
   let lastTiltPosition = null;
   let lastMotionInput = 0;
+  let lastDirectionalSwitch = -Infinity;
+  let directionTracking = {
+    source: null,
+    active: null,
+    candidate: null,
+    candidateTravel: 0,
+    candidateSamples: 0,
+    lastSampleTime: 0,
+  };
+  let motionEdges = {
+    left: false,
+    right: false,
+    top: false,
+    bottom: false,
+  };
   let lastUserActivity = performance.now();
   let frameExpanded = false;
   let expandedLockedPosition = null;
@@ -333,15 +326,149 @@ async function setupWorkStage() {
     };
   }
 
-  function shuffle(values) {
-    const shuffled = [...values];
-
-    for (let index = shuffled.length - 1; index > 0; index -= 1) {
-      const swapIndex = Math.floor(Math.random() * (index + 1));
-      [shuffled[index], shuffled[swapIndex]] = [shuffled[swapIndex], shuffled[index]];
+  function directionFromDelta(deltaX, deltaY) {
+    if (Math.abs(deltaX) >= Math.abs(deltaY)) {
+      return deltaX < 0 ? "left" : "right";
     }
 
-    return shuffled;
+    return deltaY < 0 ? "up" : "down";
+  }
+
+  function modeForDirection(direction) {
+    return direction === "left" || direction === "up"
+      ? "descending"
+      : "ascending";
+  }
+
+  function resetDirectionCandidate() {
+    directionTracking.candidate = null;
+    directionTracking.candidateTravel = 0;
+    directionTracking.candidateSamples = 0;
+  }
+
+  function resetDirectionTracking(source = null) {
+    directionTracking = {
+      source,
+      active: null,
+      candidate: null,
+      candidateTravel: 0,
+      candidateSamples: 0,
+      lastSampleTime: 0,
+    };
+  }
+
+  function requestDirectionalVideo(direction) {
+    const now = performance.now();
+
+    if (now - lastDirectionalSwitch < 720) {
+      return false;
+    }
+
+    lastDirectionalSwitch = now;
+    switchVideo(modeForDirection(direction));
+    return true;
+  }
+
+  function trackMovementDirection(deltaX, deltaY, source) {
+    const distance = Math.hypot(deltaX, deltaY);
+    const minimumSample = source === "gyro" ? 0.12 : source === "touch" ? 0.8 : 1.2;
+
+    if (distance < minimumSample) {
+      return;
+    }
+
+    const now = performance.now();
+    const nextDirection = directionFromDelta(deltaX, deltaY);
+
+    if (directionTracking.source !== source) {
+      resetDirectionTracking(source);
+    }
+
+    if (!directionTracking.active) {
+      directionTracking.active = nextDirection;
+      directionTracking.lastSampleTime = now;
+      return;
+    }
+
+    if (nextDirection === directionTracking.active) {
+      resetDirectionCandidate();
+      directionTracking.lastSampleTime = now;
+      return;
+    }
+
+    const candidateGap = source === "gyro" ? 180 : 240;
+
+    if (
+      directionTracking.candidate !== nextDirection ||
+      now - directionTracking.lastSampleTime > candidateGap
+    ) {
+      resetDirectionCandidate();
+      directionTracking.candidate = nextDirection;
+    }
+
+    directionTracking.candidateTravel += distance;
+    directionTracking.candidateSamples += 1;
+    directionTracking.lastSampleTime = now;
+
+    // A new direction must persist across several samples so hand and sensor
+    // jitter cannot be mistaken for intentional navigation.
+    const requiredTravel = source === "gyro" ? 1.6 : source === "touch" ? 10 : 14;
+    const requiredSamples = source === "gyro" ? 4 : 2;
+
+    if (
+      directionTracking.candidateTravel < requiredTravel ||
+      directionTracking.candidateSamples < requiredSamples
+    ) {
+      return;
+    }
+
+    directionTracking.active = nextDirection;
+    resetDirectionCandidate();
+    requestDirectionalVideo(nextDirection);
+  }
+
+  function resetMotionEdges() {
+    motionEdges = {
+      left: false,
+      right: false,
+      top: false,
+      bottom: false,
+    };
+  }
+
+  function updateMotionEdges(normalizedTilt, tiltChange) {
+    const enterThreshold = 0.985;
+    const releaseThreshold = 0.9;
+    const edgeChecks = [
+      { name: "left", amount: -normalizedTilt.x, movement: -tiltChange.x },
+      { name: "right", amount: normalizedTilt.x, movement: tiltChange.x },
+      { name: "top", amount: -normalizedTilt.y, movement: -tiltChange.y },
+      { name: "bottom", amount: normalizedTilt.y, movement: tiltChange.y },
+    ];
+    let enteredEdge = false;
+
+    edgeChecks.forEach(({ name, amount, movement }) => {
+      if (motionEdges[name]) {
+        if (amount < releaseThreshold) {
+          motionEdges[name] = false;
+        }
+
+        return;
+      }
+
+      if (amount >= enterThreshold && movement > 0.08) {
+        // Latch the edge until the tilt moves clearly away from it.
+        motionEdges[name] = true;
+        enteredEdge = true;
+      }
+    });
+
+    if (enteredEdge) {
+      requestDirectionalVideo(directionFromDelta(tiltChange.x, tiltChange.y));
+      resetDirectionTracking("gyro");
+    }
+
+    return Object.values(motionEdges).some(Boolean);
   }
 
   function nextAscendingProjectIndex(fromIndex = currentProjectIndex) {
@@ -367,45 +494,11 @@ async function setupWorkStage() {
   }
 
   function projectIndexForMode(mode) {
-    if (mode === "random") {
-      if (
-        queuedProjectIndex >= 0 &&
-        queuedProjectIndex !== currentProjectIndex
-      ) {
-        return queuedProjectIndex;
-      }
-
-      return drawRandomProjectIndex();
-    }
-
     if (mode === "descending") {
       return previousAscendingProjectIndex();
     }
 
     return nextAscendingProjectIndex();
-  }
-
-  function refillRandomDeck() {
-    randomDeck = shuffle(projects.map((project) => project.index));
-  }
-
-  function drawRandomProjectIndex(excludedIndex = currentProjectIndex) {
-    if (projects.length === 1) {
-      return projects[0].index;
-    }
-
-    if (randomDeck.length === 0) {
-      refillRandomDeck();
-    }
-
-    let deckIndex = randomDeck.findIndex((projectIndex) => projectIndex !== excludedIndex);
-
-    if (deckIndex < 0) {
-      refillRandomDeck();
-      deckIndex = randomDeck.findIndex((projectIndex) => projectIndex !== excludedIndex);
-    }
-
-    return randomDeck.splice(deckIndex, 1)[0];
   }
 
   function setProjectLabel(project) {
@@ -619,33 +712,11 @@ async function setupWorkStage() {
         return;
       }
 
-      travelAccumulator = 0;
-      switchVideo();
+      lastDirectionalSwitch = performance.now();
+      resetDirectionTracking();
+      switchVideo("ascending");
     });
   });
-
-  function movementThreshold() {
-    if (coarsePointer.matches) {
-      return Math.max(85, Math.min(125, stage.clientWidth * 0.24));
-    }
-
-    return Math.max(110, Math.min(160, stage.clientWidth * 0.095));
-  }
-
-  function addTravel(distance) {
-    if (!stageVisible || distance < 0.5) {
-      return;
-    }
-
-    travelAccumulator += distance;
-
-    if (travelAccumulator < movementThreshold()) {
-      return;
-    }
-
-    travelAccumulator = 0;
-    switchVideo();
-  }
 
   function updateTargetFromPoint(clientX, clientY) {
     const bounds = stage.getBoundingClientRect();
@@ -665,6 +736,7 @@ async function setupWorkStage() {
     lastPointerInput = performance.now();
     lastUserActivity = lastPointerInput;
     pointerPosition = { x: event.clientX, y: event.clientY };
+    resetDirectionTracking("pointer");
     updateTargetFromPoint(event.clientX, event.clientY);
   });
 
@@ -675,12 +747,13 @@ async function setupWorkStage() {
 
     lastUserActivity = performance.now();
     let distance = 0;
+    let deltaX = 0;
+    let deltaY = 0;
 
     if (touchPosition) {
-      distance = Math.hypot(
-        event.clientX - touchPosition.x,
-        event.clientY - touchPosition.y
-      );
+      deltaX = event.clientX - touchPosition.x;
+      deltaY = event.clientY - touchPosition.y;
+      distance = Math.hypot(deltaX, deltaY);
       touchTravel += distance;
     }
 
@@ -710,7 +783,6 @@ async function setupWorkStage() {
             : deltaX < 0;
 
           expandedSwipeHandled = true;
-          travelAccumulator = 0;
           switchVideo(forward ? "ascending" : "descending");
         }
       }
@@ -720,7 +792,7 @@ async function setupWorkStage() {
     }
 
     updateTargetFromPoint(event.clientX, event.clientY);
-    addTravel(distance);
+    trackMovementDirection(deltaX, deltaY, "touch");
     touchPosition = { x: event.clientX, y: event.clientY };
   });
 
@@ -735,7 +807,11 @@ async function setupWorkStage() {
     updateTargetFromPoint(event.clientX, event.clientY);
 
     if (pointerPosition) {
-      addTravel(Math.hypot(event.clientX - pointerPosition.x, event.clientY - pointerPosition.y));
+      trackMovementDirection(
+        event.clientX - pointerPosition.x,
+        event.clientY - pointerPosition.y,
+        "pointer"
+      );
     }
 
     pointerPosition = { x: event.clientX, y: event.clientY };
@@ -745,12 +821,14 @@ async function setupWorkStage() {
     if (event.pointerType !== "touch") {
       pointerActive = false;
       pointerPosition = null;
+      resetDirectionTracking();
     }
   });
 
   window.addEventListener("blur", () => {
     pointerActive = false;
     pointerPosition = null;
+    resetDirectionTracking();
   });
 
   stage.addEventListener("pointerdown", (event) => {
@@ -766,6 +844,7 @@ async function setupWorkStage() {
     lastUserActivity = performance.now();
     touchPosition = { x: event.clientX, y: event.clientY };
     touchStartPosition = { ...touchPosition };
+    resetDirectionTracking("touch");
 
     if (!frameExpanded) {
       updateTargetFromPoint(event.clientX, event.clientY);
@@ -792,6 +871,10 @@ async function setupWorkStage() {
         suppressClick = false;
       }, 500);
     }
+
+    if (motionListening) {
+      resetMotionCalibration();
+    }
   }
 
   stage.addEventListener("pointerup", endTouchDrag);
@@ -808,7 +891,6 @@ async function setupWorkStage() {
     }
 
     lastUserActivity = performance.now();
-    travelAccumulator = 0;
 
     frameExpanded = !frameExpanded;
     targetFrameScale = frameExpanded ? enlargedFrameScale() : 1;
@@ -848,7 +930,6 @@ async function setupWorkStage() {
 
     event.preventDefault();
     lastUserActivity = performance.now();
-    travelAccumulator = 0;
     switchVideo();
   });
 
@@ -885,12 +966,15 @@ async function setupWorkStage() {
     motionOrigin = { ...currentPosition };
     lastTiltPosition = null;
     targetPosition = { ...currentPosition };
+    resetMotionEdges();
+    resetDirectionTracking("gyro");
   }
 
   function handleOrientation(event) {
     if (
       !stageVisible ||
       (frameExpanded && coarsePointer.matches) ||
+      touchDragging ||
       event.beta == null ||
       event.gamma == null
     ) {
@@ -940,21 +1024,24 @@ async function setupWorkStage() {
     };
 
     if (lastTiltPosition) {
+      const tiltChange = {
+        x: clamped.x - lastTiltPosition.x,
+        y: clamped.y - lastTiltPosition.y,
+      };
       const tiltDelta = Math.hypot(
-        clamped.x - lastTiltPosition.x,
-        clamped.y - lastTiltPosition.y
+        tiltChange.x,
+        tiltChange.y
       );
-      const gyroSequenceScale =
-        Math.min(stage.clientWidth, stage.clientHeight) * 0.014;
-      const tiltTravel = tiltDelta * gyroSequenceScale;
 
       if (tiltDelta > 0.2) {
         lastMotionInput = performance.now();
         lastUserActivity = lastMotionInput;
       }
 
-      if (tiltTravel > 2.5) {
-        addTravel(tiltTravel);
+      if (updateMotionEdges(normalizedTilt, tiltChange)) {
+        resetDirectionCandidate();
+      } else {
+        trackMovementDirection(tiltChange.x, tiltChange.y, "gyro");
       }
     }
 
@@ -1240,8 +1327,7 @@ async function setupWorkStage() {
     if (bounced) {
       rotateIdleVelocity((Math.random() - 0.5) * 0.34);
       chooseIdleCurve(now);
-      travelAccumulator = 0;
-      switchVideo("random");
+      requestDirectionalVideo(directionFromDelta(idleVelocity.x, idleVelocity.y));
     }
 
     return clampPosition(idlePosition, bounds);
@@ -1280,7 +1366,7 @@ async function setupWorkStage() {
       !mobileExpanded &&
       (touchDragging || (pointerActive && now - lastPointerInput < 3000));
     const motionOverride =
-      !mobileExpanded && lastMotionInput > 0 && now - lastMotionInput < 260;
+      !mobileExpanded && !pointerOverride && motionListening && lastMotionInput > 0;
     const inputOverride = pointerOverride || motionOverride;
     const desired = reduceMotion
       ? center
