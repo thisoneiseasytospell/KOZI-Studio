@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "slug": "010-totems",
+  "order": 2,
+  "title": "010 Totems",
+  "summary": "A family of animated digital totems exploring rhythm, repetition and character. The system turns a compact set of graphic parts into an expanding collection of identities in motion.",
+  "services": [
+    "Concept",
+    "Art Direction",
+    "Motion Design",
+    "3D Design"
+  ],
+  "credits": [
+    {
+      "role": "Client",
+      "name": "Client Name"
+    },
+    {
+      "role": "Year",
+      "name": "2025"
+    }
+  ],
+  "hero": {
+    "desktopSrc": "/assets/videos/optimized/02-demonew-1440-v1-03ad36cfea.mp4",
+    "mobileSrc": "/assets/videos/optimized/02-demonew-960-v1-03ad36cfea.mp4",
+    "alt": "Animated 010 Totems project preview",
+    "aspectRatio": "16 / 9"
+  },
+  "media": []
+}

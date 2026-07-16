@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "slug": "l-nett-fasett",
+  "order": 11,
+  "title": "L-nett / Fasett",
+  "summary": "",
+  "services": [],
+  "credits": [],
+  "hero": {
+    "desktopSrc": "/assets/videos/optimized/11-lnett-colors-patterns-1440-v1-b3295d5186.mp4",
+    "mobileSrc": "/assets/videos/optimized/11-lnett-colors-patterns-960-v1-b3295d5186.mp4",
+    "alt": "L-nett color and pattern motion system with Fasett",
+    "aspectRatio": "16 / 9"
+  },
+  "media": [
+    {
+      "type": "video",
+      "desktopSrc": "/assets/videos/optimized/14-lnett-Type-MGLnett-1440-v1-2fa4940f56.mp4",
+      "mobileSrc": "/assets/videos/optimized/14-lnett-Type-MGLnett-960-v1-2fa4940f56.mp4",
+      "alt": "L-nett animated typography",
+      "aspectRatio": "16 / 9",
+      "caption": ""
+    }
+  ]
+}

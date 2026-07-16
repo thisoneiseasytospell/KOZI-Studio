@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "slug": "7analytics-studio-oker",
+  "order": 4,
+  "title": "7Analytics / Studio Oker",
+  "summary": "",
+  "services": [],
+  "credits": [],
+  "hero": {
+    "desktopSrc": "/assets/videos/optimized/04-o-1440-v1-0cb7d22f3a.mp4",
+    "mobileSrc": "/assets/videos/optimized/04-o-960-v1-0cb7d22f3a.mp4",
+    "alt": "7Analytics identity motion for Studio Oker",
+    "aspectRatio": "16 / 9"
+  },
+  "media": []
+}

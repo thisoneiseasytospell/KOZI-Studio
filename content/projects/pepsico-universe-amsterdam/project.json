@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "slug": "pepsico-universe-amsterdam",
+  "order": 7,
+  "title": "PepsiCo / UNI_VERSE Amsterdam",
+  "summary": "",
+  "services": [],
+  "credits": [],
+  "hero": {
+    "desktopSrc": "/assets/videos/optimized/07-o-can-cut-1440-v1-ae1f34b865.mp4",
+    "mobileSrc": "/assets/videos/optimized/07-o-can-cut-960-v1-ae1f34b865.mp4",
+    "alt": "PepsiCo motion project with UNI_VERSE Amsterdam",
+    "aspectRatio": "16 / 9"
+  },
+  "media": []
+}

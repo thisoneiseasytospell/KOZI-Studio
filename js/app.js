@@ -169,27 +169,37 @@ if (stage && frame && videos.length === 2 && projectLabel && projectNumber && pr
 }
 
 async function setupWorkStage() {
-  const response = await fetch("./assets/videos/manifest.json?v=2");
+  const response = await fetch("./assets/projects/index.json?v=1");
 
   if (!response.ok) {
     throw new Error(`Unable to load video manifest: ${response.status}`);
   }
 
-  const manifest = await response.json();
+  const projectIndex = await response.json();
+  const manifest = Array.isArray(projectIndex) ? projectIndex : projectIndex.projects;
+
+  if (!Array.isArray(manifest)) {
+    throw new Error("The project index has an invalid format.");
+  }
+
   const compactVideo = window.matchMedia("(max-width: 760px), (hover: none), (pointer: coarse)");
   const normalizeVideoPath = (path) => {
     if (!path) {
       return "";
     }
 
-    return path.startsWith(".") ? path : `./${path}`;
+    return path.startsWith(".") || path.startsWith("/") ? path : `./${path}`;
   };
   const projects = manifest
     .filter((project) => (project.desktopPath || project.mobilePath || project.localPath) && project.title)
     .map((project, index) => ({
       index,
       order: Number(project.order) || index + 1,
+      slug: project.slug,
       title: project.title,
+      alt: project.alt || `${project.title} project preview`,
+      detailPath: project.detailPath,
+      route: project.route || `/work/${project.slug}/`,
       desktopSrc: normalizeVideoPath(project.desktopPath || project.localPath || project.mobilePath),
       mobileSrc: normalizeVideoPath(project.mobilePath || project.desktopPath || project.localPath),
     }));
@@ -215,6 +225,7 @@ async function setupWorkStage() {
   let pointerPosition = null;
   let pointerActive = false;
   let lastPointerInput = 0;
+  let pointerReentryTime = 0;
   let touchPosition = null;
   let touchStartPosition = null;
   let touchDragging = false;
@@ -244,6 +255,7 @@ async function setupWorkStage() {
   };
   let lastUserActivity = performance.now();
   let frameExpanded = false;
+  let caseStudyActive = false;
   let expandedLockedPosition = null;
   let trailCursor = 0;
   let lastTrailTime = 0;
@@ -304,7 +316,14 @@ async function setupWorkStage() {
     lastUserActivity = performance.now();
   }
 
-  window.addEventListener("pointerdown", markUserActivity, { passive: true });
+  window.addEventListener("pointerdown", (event) => {
+    markUserActivity();
+
+    if (event.pointerType !== "touch") {
+      pointerPosition = { x: event.clientX, y: event.clientY };
+      updateTargetFromPoint(event.clientX, event.clientY);
+    }
+  }, { passive: true });
   window.addEventListener("keydown", markUserActivity);
 
   function getMovementBounds(frameWidth = frame.offsetWidth, frameHeight = frame.offsetHeight) {
@@ -358,6 +377,10 @@ async function setupWorkStage() {
   }
 
   function requestDirectionalVideo(direction) {
+    if (caseStudyActive) {
+      return false;
+    }
+
     const now = performance.now();
 
     if (now - lastDirectionalSwitch < 720) {
@@ -506,6 +529,50 @@ async function setupWorkStage() {
     projectTitle.textContent = project.title;
     stage.dataset.projectIndex = String(project.order);
     stage.dataset.projectTitle = project.title;
+    stage.dataset.projectSlug = project.slug;
+    frame.setAttribute("role", "link");
+    frame.setAttribute("aria-label", `Open ${project.title} case study`);
+    stage.setAttribute(
+      "aria-label",
+      `${project.title}, selected work. Press Enter to open the case study. Use arrow keys to browse projects.`
+    );
+  }
+
+  function announceActiveProject(project = projects[currentProjectIndex]) {
+    if (!project) {
+      return;
+    }
+
+    window.dispatchEvent(new CustomEvent("kozi:projectchange", {
+      detail: {
+        project: { ...project },
+        video: videos[activeSlotIndex],
+        frame,
+      },
+    }));
+  }
+
+  function requestCaseStudyOpen() {
+    if (caseStudyActive) {
+      return;
+    }
+
+    const project = projects[currentProjectIndex];
+    const activeVideo = videos[activeSlotIndex];
+
+    if (!project) {
+      return;
+    }
+
+    window.dispatchEvent(new CustomEvent("kozi:requestprojectopen", {
+      detail: {
+        slug: project.slug,
+        project: { ...project },
+        frame,
+        video: activeVideo,
+        currentTime: activeVideo.currentTime || 0,
+      },
+    }));
   }
 
   function setFrameRatio() {
@@ -577,7 +644,7 @@ async function setupWorkStage() {
           return;
         }
 
-        reject(new Error(`Unable to load ${project.src}`));
+        reject(new Error(`Unable to load ${videoSource(project)}`));
       }
 
       if (video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA) {
@@ -594,7 +661,7 @@ async function setupWorkStage() {
     const activeVideo = videos[activeSlotIndex];
 
     videos.forEach((video, index) => {
-      if (stageVisible && !document.hidden && index === activeSlotIndex) {
+      if (stageVisible && !caseStudyActive && !document.hidden && index === activeSlotIndex) {
         video.play().catch(() => {});
       } else {
         video.pause();
@@ -699,6 +766,7 @@ async function setupWorkStage() {
     outgoingVideo.pause();
 
     playActiveVideo();
+    announceActiveProject(nextProject);
     queueNextVideo(projectIndexForMode(mode));
   }
 
@@ -732,8 +800,14 @@ async function setupWorkStage() {
       return;
     }
 
+    const now = performance.now();
+
+    if (!pointerActive || now - lastPointerInput > 500) {
+      pointerReentryTime = now;
+    }
+
     pointerActive = true;
-    lastPointerInput = performance.now();
+    lastPointerInput = now;
     lastUserActivity = lastPointerInput;
     pointerPosition = { x: event.clientX, y: event.clientY };
     resetDirectionTracking("pointer");
@@ -801,8 +875,14 @@ async function setupWorkStage() {
       return;
     }
 
+    const now = performance.now();
+
+    if (!pointerActive || now - lastPointerInput > 500) {
+      pointerReentryTime = now;
+    }
+
     pointerActive = true;
-    lastPointerInput = performance.now();
+    lastPointerInput = now;
     lastUserActivity = lastPointerInput;
     updateTargetFromPoint(event.clientX, event.clientY);
 
@@ -890,47 +970,111 @@ async function setupWorkStage() {
       return;
     }
 
+    if (!event.target.closest?.("[data-video-frame]")) {
+      return;
+    }
+
     lastUserActivity = performance.now();
-
-    frameExpanded = !frameExpanded;
-    targetFrameScale = frameExpanded ? enlargedFrameScale() : 1;
-    const targetBounds = getMovementBounds(
-      frame.offsetWidth * targetFrameScale,
-      frame.offsetHeight * targetFrameScale
-    );
-
-    if (frameExpanded && coarsePointer.matches) {
-      expandedLockedPosition = clampPosition(stageAnchor(), targetBounds);
-      targetPosition = { ...expandedLockedPosition };
-      expandedSwipeOffset = { x: 0, y: 0 };
-      clearTrail();
-    } else {
-      expandedLockedPosition = null;
-      expandedSwipeOffset = { x: 0, y: 0 };
-      targetPosition = clampPosition(targetPosition, targetBounds);
-    }
-
-    if (coarsePointer.matches) {
-      lastMotionInput = 0;
-      resetMotionCalibration();
-    }
-
-    idlePosition = clampPosition(idlePosition || currentPosition, targetBounds);
-    idleLastTime = lastUserActivity;
-    previousFramePosition = { ...currentPosition };
-    previousFrameTime = lastUserActivity;
-    lastTrailPosition = { ...currentPosition };
-    lastTrailScale = frameScale;
+    requestCaseStudyOpen();
   });
 
   stage.addEventListener("keydown", (event) => {
-    if (!["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", " "].includes(event.key)) {
+    if (
+      caseStudyActive ||
+      event.target.closest?.(".motion-permission") ||
+      !["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", " ", "Enter"].includes(event.key)
+    ) {
       return;
     }
 
     event.preventDefault();
     lastUserActivity = performance.now();
-    switchVideo();
+
+    if (event.key === " " || event.key === "Enter") {
+      requestCaseStudyOpen();
+      return;
+    }
+
+    switchVideo(
+      event.key === "ArrowLeft" || event.key === "ArrowUp"
+        ? "descending"
+        : "ascending"
+    );
+  });
+
+  window.addEventListener("kozi:casestudystate", (event) => {
+    const caseStudyClosing = Boolean(event.detail?.closing);
+
+    caseStudyActive = Boolean(event.detail?.open) || caseStudyClosing;
+    frameExpanded = false;
+    targetFrameScale = 1;
+    stage.classList.toggle("is-case-open", caseStudyActive);
+    stage.classList.toggle("is-case-closing", caseStudyClosing);
+
+    if (caseStudyActive) {
+      pointerActive = false;
+      touchDragging = false;
+      clearTrail();
+    } else {
+      const handoffTime = Number(event.detail?.currentTime);
+      const activeVideo = videos[activeSlotIndex];
+
+      if (
+        Number.isFinite(handoffTime) &&
+        handoffTime >= 0 &&
+        event.detail?.slug === stage.dataset.projectSlug
+      ) {
+        const syncHandoffTime = () => {
+          if (!Number.isFinite(activeVideo.duration) || activeVideo.duration <= 0) {
+            return;
+          }
+
+          try {
+            activeVideo.currentTime = handoffTime % activeVideo.duration;
+          } catch {
+            // Seeking can briefly be unavailable while a newly selected video loads.
+          }
+        };
+
+        if (activeVideo.readyState >= HTMLMediaElement.HAVE_METADATA) {
+          syncHandoffTime();
+        } else {
+          activeVideo.addEventListener("loadedmetadata", syncHandoffTime, { once: true });
+        }
+      }
+
+      const resumedAt = performance.now();
+
+      if (pointerPosition && !coarsePointer.matches) {
+        pointerActive = true;
+        lastPointerInput = resumedAt;
+        pointerReentryTime = resumedAt - 1100;
+        updateTargetFromPoint(pointerPosition.x, pointerPosition.y);
+        resetDirectionTracking("pointer");
+      } else {
+        pointerActive = false;
+        pointerPosition = null;
+        lastPointerInput = 0;
+        pointerReentryTime = resumedAt;
+        targetPosition = { ...currentPosition };
+      }
+
+      lastUserActivity = resumedAt;
+      idleLastTime = lastUserActivity;
+    }
+
+    playActiveVideo();
+  });
+
+  window.addEventListener("kozi:requeststageproject", (event) => {
+    const requestedSlug = event.detail?.slug;
+    const requestedIndex = projects.findIndex((project) => project.slug === requestedSlug);
+
+    if (requestedIndex < 0 || requestedIndex === currentProjectIndex) {
+      return;
+    }
+
+    switchVideo("ascending", requestedIndex);
   });
 
   function screenOrientationAngle() {
@@ -973,6 +1117,7 @@ async function setupWorkStage() {
   function handleOrientation(event) {
     if (
       !stageVisible ||
+      caseStudyActive ||
       (frameExpanded && coarsePointer.matches) ||
       touchDragging ||
       event.beta == null ||
@@ -1368,7 +1513,14 @@ async function setupWorkStage() {
     const motionOverride =
       !mobileExpanded && !pointerOverride && motionListening && lastMotionInput > 0;
     const inputOverride = pointerOverride || motionOverride;
-    const desired = reduceMotion
+    const pointerReentryProgress = Math.min(
+      1,
+      Math.max(0, now - pointerReentryTime) / 1100
+    );
+    const pointerEasing = 0.035 + pointerReentryProgress * 0.085;
+    const desired = caseStudyActive
+      ? currentPosition
+      : reduceMotion
       ? center
       : mobileExpanded
         ? {
@@ -1388,7 +1540,7 @@ async function setupWorkStage() {
           : 1
         : inputOverride
           ? pointerOverride
-            ? 0.22
+            ? pointerEasing
             : 0.085
           : scaleTransitioning
             ? 0.14
@@ -1461,6 +1613,7 @@ async function setupWorkStage() {
 
     if (
       stageVisible &&
+      !caseStudyActive &&
       !mobileExpanded &&
       now - lastTrailTime >= trailInterval &&
       (distanceSinceTrail >= trailDistance || scaleDistanceSinceTrail >= trailDistance)
@@ -1506,7 +1659,13 @@ async function setupWorkStage() {
     playActiveVideo();
   });
 
-  currentProjectIndex = nextAscendingProjectIndex(-1);
+  const initialProjectSlug = document.body.dataset.initialProject;
+  const initialProjectIndex = initialProjectSlug
+    ? projects.findIndex((project) => project.slug === initialProjectSlug)
+    : -1;
+  currentProjectIndex = initialProjectIndex >= 0
+    ? initialProjectIndex
+    : nextAscendingProjectIndex(-1);
   const firstProject = projects[currentProjectIndex];
   setProjectLabel(firstProject);
   videos[1].setAttribute("aria-hidden", "true");
@@ -1518,6 +1677,7 @@ async function setupWorkStage() {
   stage.classList.add("is-ready");
   hideLoading();
   playActiveVideo();
+  announceActiveProject(firstProject);
   stage.addEventListener("pointermove", queueInitialNextVideo, { once: true, passive: true });
   stage.addEventListener("pointerdown", queueInitialNextVideo, { once: true, passive: true });
   stage.addEventListener("touchstart", queueInitialNextVideo, { once: true, passive: true });

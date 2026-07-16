@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "slug": "ege-snohetta",
+  "order": 12,
+  "title": "Ege / Snøhetta",
+  "summary": "",
+  "services": [],
+  "credits": [],
+  "hero": {
+    "desktopSrc": "/assets/videos/optimized/12-o-Ege-mock-matter-1440-v1-e703332483.mp4",
+    "mobileSrc": "/assets/videos/optimized/12-o-Ege-mock-matter-960-v1-e703332483.mp4",
+    "alt": "Ege material motion project for Snøhetta",
+    "aspectRatio": "16 / 9"
+  },
+  "media": []
+}

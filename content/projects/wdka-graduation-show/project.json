@@ -1,0 +1,31 @@
+{
+  "schemaVersion": 1,
+  "slug": "wdka-graduation-show",
+  "order": 1,
+  "title": "WdKA Graduation 2026",
+  "summary": "A vibrant campaign system for the 2026 graduation show, bringing together the work of a new generation of makers through a flexible identity built for screens, spaces and motion.",
+  "services": [
+    "Creative Direction",
+    "Motion Design",
+    "Creative Tool",
+    "AI",
+    "3D Simulation"
+  ],
+  "credits": [
+    {
+      "role": "Client",
+      "name": "Full Name"
+    },
+    {
+      "role": "Year",
+      "name": "2026"
+    }
+  ],
+  "hero": {
+    "desktopSrc": "/assets/videos/optimized/01-ooo-50-WWW-16-9-1440-v1-0a0feecd91.mp4",
+    "mobileSrc": "/assets/videos/optimized/01-ooo-50-WWW-16-9-960-v1-0a0feecd91.mp4",
+    "alt": "Motion design for WdKA Graduation 2026",
+    "aspectRatio": "16 / 9"
+  },
+  "media": []
+}

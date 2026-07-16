@@ -1,0 +1,33 @@
+{
+  "schemaVersion": 1,
+  "slug": "snohetta",
+  "order": 3,
+  "title": "Snøhetta",
+  "summary": "A motion-led visual study translating architectural form into a graphic language of shifting scale, material and light. Designed as a flexible toolkit for films, presentations and digital touchpoints.",
+  "services": [
+    "Creative Direction",
+    "Graphic Design",
+    "Motion Design"
+  ],
+  "credits": [
+    {
+      "role": "Client",
+      "name": "Snøhetta"
+    },
+    {
+      "role": "Design Team",
+      "name": "Full Name"
+    },
+    {
+      "role": "Year",
+      "name": "2025"
+    }
+  ],
+  "hero": {
+    "desktopSrc": "/assets/videos/optimized/03-Corvematta-4K-Single-1440-v1-f745c576ba.mp4",
+    "mobileSrc": "/assets/videos/optimized/03-Corvematta-4K-Single-960-v1-f745c576ba.mp4",
+    "alt": "Motion design project for Snøhetta",
+    "aspectRatio": "16 / 9"
+  },
+  "media": []
+}

@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "slug": "norwegian-opera-house-snohetta",
+  "order": 5,
+  "title": "Norwegian Opera House / Snøhetta",
+  "summary": "",
+  "services": [],
+  "credits": [],
+  "hero": {
+    "desktopSrc": "/assets/videos/optimized/05-type-explosion--2--1440-v1-f0cc4079ea.mp4",
+    "mobileSrc": "/assets/videos/optimized/05-type-explosion--2--960-v1-f0cc4079ea.mp4",
+    "alt": "Animated typography for the Norwegian Opera House and Snøhetta",
+    "aspectRatio": "16 / 9"
+  },
+  "media": []
+}

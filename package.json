@@ -1,0 +1,8 @@
+{
+  "name": "kozi-studio",
+  "private": true,
+  "scripts": {
+    "build": "node scripts/build-project-pages.mjs",
+    "check:projects": "node scripts/build-project-pages.mjs --check"
+  }
+}

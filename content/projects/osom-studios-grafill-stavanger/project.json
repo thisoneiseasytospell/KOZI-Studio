@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "slug": "osom-studios-grafill-stavanger",
+  "order": 14,
+  "title": "Osom Studios / Grafill Stavanger",
+  "summary": "",
+  "services": [],
+  "credits": [],
+  "hero": {
+    "desktopSrc": "/assets/videos/optimized/15-Osom-Studios-Grafill-Stavanger-1440-v1-36cb8a71ea.mp4",
+    "mobileSrc": "/assets/videos/optimized/15-Osom-Studios-Grafill-Stavanger-960-v1-36cb8a71ea.mp4",
+    "alt": "Osom Studios motion project for Grafill Stavanger",
+    "aspectRatio": "240 / 217"
+  },
+  "media": []
+}

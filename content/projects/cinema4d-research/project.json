@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "slug": "cinema4d-research",
+  "order": 8,
+  "title": "Cinema4D Research",
+  "summary": "",
+  "services": [],
+  "credits": [],
+  "hero": {
+    "desktopSrc": "/assets/videos/optimized/08-o-tv-cut-1440-v1-fca0aa810b.mp4",
+    "mobileSrc": "/assets/videos/optimized/08-o-tv-cut-960-v1-fca0aa810b.mp4",
+    "alt": "Cinema4D motion research",
+    "aspectRatio": "16 / 9"
+  },
+  "media": []
+}

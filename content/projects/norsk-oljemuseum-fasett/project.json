@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "slug": "norsk-oljemuseum-fasett",
+  "order": 9,
+  "title": "Norsk Oljemuseum / Fasett",
+  "summary": "",
+  "services": [],
+  "credits": [],
+  "hero": {
+    "desktopSrc": "/assets/videos/optimized/09-o-CCS-1440-v1-440aa1d00d.mp4",
+    "mobileSrc": "/assets/videos/optimized/09-o-CCS-960-v1-440aa1d00d.mp4",
+    "alt": "Motion design for Norsk Oljemuseum with Fasett",
+    "aspectRatio": "16 / 9"
+  },
+  "media": []
+}
