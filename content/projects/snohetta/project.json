@@ -3,9 +3,13 @@
   "slug": "snohetta",
   "order": 3,
   "title": "Snøhetta Design",
-  "wip": true,
+  "wip": false,
   "summary": "",
-  "tags": [],
+  "tags": [
+    "Graphic Design",
+    "3D",
+    "Motion Design"
+  ],
   "services": [],
   "credits": [],
   "hero": {

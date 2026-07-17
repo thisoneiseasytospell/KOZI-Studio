@@ -46,8 +46,12 @@
       "slug": "snohetta",
       "caseStudySlug": "snohetta",
       "title": "Snøhetta Design",
-      "wip": true,
-      "tags": [],
+      "wip": false,
+      "tags": [
+        "Graphic Design",
+        "3D",
+        "Motion Design"
+      ],
       "alt": "Motion design project for Snøhetta",
       "aspectRatio": "16 / 9",
       "desktopPath": "/assets/videos/optimized/03-Corvematta-4K-Single-1440-v1-f745c576ba.mp4",
