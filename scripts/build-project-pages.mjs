@@ -190,7 +190,7 @@ function projectSummary(project) {
     desktopPath: project.hero.desktopSrc,
     mobilePath: project.hero.mobileSrc,
     poster: project.hero.poster || "",
-    detailPath: `/content/projects/${project.slug}/project.json?v=2`,
+    detailPath: `/content/projects/${project.slug}/project.json?v=3`,
     route: `/work/${project.slug}/`,
   };
 }

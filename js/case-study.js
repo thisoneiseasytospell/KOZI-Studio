@@ -46,7 +46,7 @@ async function setupCaseStudies() {
   const caseScrollDuration = 240;
   const reduceCaseMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   const compactCaseMedia = window.matchMedia("(max-width: 760px), (hover: none), (pointer: coarse)");
-  const response = await fetch("/assets/projects/index.json?v=2");
+  const response = await fetch("/assets/projects/index.json?v=3");
 
   if (!response.ok) {
     throw new Error(`Unable to load project index: ${response.status}`);
