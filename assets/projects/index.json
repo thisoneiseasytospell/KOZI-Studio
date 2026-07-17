@@ -6,7 +6,13 @@
       "slug": "wdka-graduation-show",
       "title": "WdKA Graduation 2026",
       "wip": true,
-      "tags": [],
+      "tags": [
+        "Direction",
+        "3D",
+        "Motion",
+        "Code",
+        "Tool"
+      ],
       "alt": "Motion design for WdKA Graduation 2026",
       "aspectRatio": "16 / 9",
       "desktopPath": "/assets/videos/optimized/01-ooo-50-WWW-16-9-1440-v1-0a0feecd91.mp4",
@@ -20,7 +26,11 @@
       "slug": "010-totems",
       "title": "010 Totems",
       "wip": true,
-      "tags": [],
+      "tags": [
+        "AI",
+        "3D",
+        "Motion"
+      ],
       "alt": "Animated 010 Totems project preview",
       "aspectRatio": "16 / 9",
       "desktopPath": "/assets/videos/optimized/02-demonew-1440-v1-03ad36cfea.mp4",

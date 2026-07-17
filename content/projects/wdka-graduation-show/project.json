@@ -4,9 +4,20 @@
   "order": 1,
   "title": "WdKA Graduation 2026",
   "wip": true,
-  "summary": "",
-  "tags": [],
-  "services": [],
+  "summary": "Selected through a competition, I served as creative director for the visual identity of the Willem de Kooning Academy Graduation Show 2026. I directed a campaign designed to live across digital and physical spaces, from motion assets and online communication to large-scale flags and handmade flag pins.\n\nAt the centre of the identity was a custom research and asset-generation tool I developed, allowing flags to be explored, composed and exported as both scalable vectors and MP4 animations. The tool connected experimentation with production, creating a flexible visual system that could shift between screen, print and physical space.",
+  "tags": [
+    "Direction",
+    "3D",
+    "Motion",
+    "Code",
+    "Tool"
+  ],
+  "services": [
+    "Creative Direction",
+    "Branding",
+    "Graphic Design",
+    "3D/Motion Design"
+  ],
   "credits": [],
   "hero": {
     "desktopSrc": "/assets/videos/optimized/01-ooo-50-WWW-16-9-1440-v1-0a0feecd91.mp4",
@@ -14,5 +25,41 @@
     "alt": "Motion design for WdKA Graduation 2026",
     "aspectRatio": "16 / 9"
   },
-  "media": []
+  "media": [
+    {
+      "type": "embed",
+      "src": "/assets/interactive/flag-studio/index.html",
+      "title": "Interactive WdKA Flag Studio",
+      "aspectRatio": "16 / 10",
+      "caption": "Interactive prototype — switch to Interact to make a flag, then back to scrolling to continue."
+    },
+    {
+      "type": "image",
+      "src": "/assets/projects/wdka-graduation-show/02-graduation-flag.webp",
+      "alt": "Green WdKA Graduation Show flag waving against a blue sky"
+    },
+    {
+      "type": "image",
+      "src": "/assets/projects/wdka-graduation-show/03-markthal-display.webp",
+      "alt": "WdKA Graduation Show campaign displayed inside Rotterdam Markthal"
+    },
+    {
+      "type": "image",
+      "src": "/assets/projects/wdka-graduation-show/04-graduation-show-interior.webp",
+      "alt": "Visitor viewing WdKA Graduation Show graphics among student posters"
+    },
+    {
+      "type": "image",
+      "src": "/assets/projects/wdka-graduation-show/05-graduation-pin.webp",
+      "alt": "Graduate 2026 WdKA flag-shaped enamel pin worn on trousers"
+    },
+    {
+      "type": "video",
+      "desktopSrc": "/assets/projects/wdka-graduation-show/01-street-screen-1440.mp4",
+      "mobileSrc": "/assets/projects/wdka-graduation-show/01-street-screen-960.mp4",
+      "poster": "/assets/projects/wdka-graduation-show/01-street-screen-poster.webp",
+      "alt": "WdKA Graduation Show campaign displayed on a large street screen in Rotterdam",
+      "aspectRatio": "16 / 9"
+    }
+  ]
 }

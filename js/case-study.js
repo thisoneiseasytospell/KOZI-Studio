@@ -347,7 +347,7 @@ async function setupCaseStudies() {
     const services = Array.isArray(project.services) ? project.services : [];
     const credits = Array.isArray(project.credits) ? project.credits : [];
 
-    caseStudySummary.textContent = summary;
+    renderSummary(project, summary);
     caseStudySummary.hidden = !summary;
     caseServices.replaceChildren();
     services.forEach((service) => {
@@ -366,6 +366,60 @@ async function setupCaseStudies() {
     });
     caseCreditsSection.hidden = credits.length === 0;
     caseStudyInformation.hidden = !summary && services.length === 0 && credits.length === 0;
+  }
+
+  function renderSummary(project, summary) {
+    caseStudySummary.replaceChildren();
+
+    const glossary = Array.isArray(project.glossary)
+      ? project.glossary.filter((entry) => entry?.term?.trim() && entry?.definition?.trim())
+      : [];
+
+    if (!summary || glossary.length === 0) {
+      caseStudySummary.textContent = summary;
+      return;
+    }
+
+    const entries = [...glossary].sort(
+      (first, second) => second.term.length - first.term.length
+    );
+    const entryByTerm = new Map(
+      entries.map((entry) => [entry.term.trim().toLocaleLowerCase(), entry])
+    );
+    const escapedTerms = entries.map((entry) =>
+      entry.term.trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+    );
+    const matcher = new RegExp(`\\b(${escapedTerms.join("|")})\\b`, "gi");
+    let sourceIndex = 0;
+    let tooltipIndex = 0;
+    let match;
+
+    while ((match = matcher.exec(summary)) !== null) {
+      caseStudySummary.append(document.createTextNode(summary.slice(sourceIndex, match.index)));
+
+      const entry = entryByTerm.get(match[0].toLocaleLowerCase());
+      const wrapper = document.createElement("span");
+      const trigger = document.createElement("button");
+      const tooltip = document.createElement("span");
+      const tooltipId = `case-term-${project.slug}-${tooltipIndex}`;
+
+      wrapper.className = "case-study-term";
+      trigger.className = "case-study-term-trigger";
+      trigger.type = "button";
+      trigger.textContent = match[0];
+      trigger.setAttribute("aria-describedby", tooltipId);
+      tooltip.className = "case-study-term-tooltip";
+      tooltip.id = tooltipId;
+      tooltip.setAttribute("role", "tooltip");
+      tooltip.textContent = entry.definition.trim();
+      wrapper.append(trigger, tooltip);
+      caseStudySummary.append(wrapper);
+
+      sourceIndex = matcher.lastIndex;
+      tooltipIndex += 1;
+    }
+
+    caseStudySummary.append(document.createTextNode(summary.slice(sourceIndex)));
   }
 
   function createMediaFigure(media) {

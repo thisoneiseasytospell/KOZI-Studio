@@ -353,12 +353,6 @@ async function setupWorkStage() {
     return deltaY < 0 ? "up" : "down";
   }
 
-  function modeForDirection(direction) {
-    return direction === "left" || direction === "up"
-      ? "descending"
-      : "ascending";
-  }
-
   function resetDirectionCandidate() {
     directionTracking.candidate = null;
     directionTracking.candidateTravel = 0;
@@ -376,20 +370,26 @@ async function setupWorkStage() {
     };
   }
 
-  function requestDirectionalVideo(direction, source) {
+  function requestDirectionalVideo(source) {
     if (caseStudyActive) {
       return false;
     }
 
     const now = performance.now();
-    const switchGap = source === "gyro" ? 320 : 720;
+    const switchGap = source === "gyro"
+      ? 320
+      : source === "touch"
+        ? 280
+        : source === "pointer"
+          ? 140
+          : 720;
 
     if (now - lastDirectionalSwitch < switchGap) {
       return false;
     }
 
     lastDirectionalSwitch = now;
-    switchVideo(source === "gyro" ? "ascending" : modeForDirection(direction));
+    switchVideo("ascending");
     return true;
   }
 
@@ -420,7 +420,7 @@ async function setupWorkStage() {
       return;
     }
 
-    const candidateGap = source === "gyro" ? 180 : 240;
+    const candidateGap = source === "gyro" ? 180 : source === "pointer" ? 120 : 240;
 
     if (
       directionTracking.candidate !== nextDirection ||
@@ -436,8 +436,8 @@ async function setupWorkStage() {
 
     // A new direction must persist across several samples so hand and sensor
     // jitter cannot be mistaken for intentional navigation.
-    const requiredTravel = source === "gyro" ? 1.6 : source === "touch" ? 10 : 14;
-    const requiredSamples = source === "gyro" ? 4 : 2;
+    const requiredTravel = source === "gyro" ? 1.6 : source === "touch" ? 10 : 4;
+    const requiredSamples = source === "gyro" ? 4 : source === "pointer" ? 1 : 2;
 
     if (
       directionTracking.candidateTravel < requiredTravel ||
@@ -446,7 +446,7 @@ async function setupWorkStage() {
       return;
     }
 
-    const switchAccepted = requestDirectionalVideo(nextDirection, source);
+    const switchAccepted = requestDirectionalVideo(source);
 
     if (switchAccepted) {
       directionTracking.active = nextDirection;
@@ -492,10 +492,7 @@ async function setupWorkStage() {
     });
 
     if (enteredEdge) {
-      const switchAccepted = requestDirectionalVideo(
-        directionFromDelta(tiltChange.x, tiltChange.y),
-        "gyro"
-      );
+      const switchAccepted = requestDirectionalVideo("gyro");
 
       if (switchAccepted) {
         resetDirectionTracking("gyro");
@@ -1491,7 +1488,7 @@ async function setupWorkStage() {
     if (bounced) {
       rotateIdleVelocity((Math.random() - 0.5) * 0.34);
       chooseIdleCurve(now);
-      requestDirectionalVideo(directionFromDelta(idleVelocity.x, idleVelocity.y));
+      requestDirectionalVideo("idle");
     }
 
     return clampPosition(idlePosition, bounds);

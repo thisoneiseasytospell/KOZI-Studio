@@ -4,8 +4,18 @@
   "order": 2,
   "title": "010 Totems",
   "wip": true,
-  "summary": "",
-  "tags": [],
+  "summary": "010 Totems explores how generative tools can translate Rotterdam’s hyperlocal culture into material and moving form. Inspired by experimental work from W+K Amsterdam, I developed an art-directed workflow moving from text-to-image, through image-to-3D, to animation and physical production. The process resulted in ten Delftware-inspired figurines based on recognisable everyday scenes, insider references and the city’s gedogen culture. Combining AI generation with manual selection, 3D printing and hand-finishing, the project turns informal local stories into a small archive of digital and physical objects.",
+  "glossary": [
+    {
+      "term": "gedogen",
+      "definition": "A Dutch practice of tolerating something officially prohibited, provided it stays within agreed limits."
+    }
+  ],
+  "tags": [
+    "AI",
+    "3D",
+    "Motion"
+  ],
   "services": [],
   "credits": [],
   "hero": {
@@ -14,5 +24,34 @@
     "alt": "Animated 010 Totems project preview",
     "aspectRatio": "16 / 9"
   },
-  "media": []
+  "media": [
+    {
+      "type": "image",
+      "src": "/assets/projects/010-totems/01-printed-totems.webp",
+      "alt": "Unfinished 3D-printed Rotterdam figurines illuminated on a workbench"
+    },
+    {
+      "type": "image",
+      "src": "/assets/projects/010-totems/02-mould-making.webp",
+      "alt": "Two-part production moulds for a row of 010 Totems"
+    },
+    {
+      "type": "image",
+      "src": "/assets/projects/010-totems/03-digital-workflow.webp",
+      "alt": "Digital production workspace surrounded by a collection of printed Totems"
+    },
+    {
+      "type": "image",
+      "src": "/assets/projects/010-totems/04-finished-ceramics.webp",
+      "alt": "Blue and yellow glazed ceramic Totems arranged in a workshop"
+    },
+    {
+      "type": "video",
+      "desktopSrc": "/assets/projects/010-totems/05-mobile-totem-720.mp4",
+      "mobileSrc": "/assets/projects/010-totems/05-mobile-totem-540.mp4",
+      "poster": "/assets/projects/010-totems/05-mobile-totem-poster.webp",
+      "alt": "A mobile phone displaying a digital 010 Totem beside a Rotterdam canal",
+      "aspectRatio": "9 / 16"
+    }
+  ]
 }

@@ -84,6 +84,16 @@ function validateProject(project, directoryName) {
     fail(`${project.slug} tags must be an array of non-empty strings.`);
   }
 
+  if (
+    project.glossary !== undefined &&
+    (!Array.isArray(project.glossary) ||
+      project.glossary.some(
+        (entry) => !entry?.term?.trim() || !entry?.definition?.trim()
+      ))
+  ) {
+    fail(`${project.slug} glossary must contain term and definition values.`);
+  }
+
   if (!Array.isArray(project.media)) {
     fail(`${project.slug} media must be an array.`);
   }
