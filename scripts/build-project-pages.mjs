@@ -64,6 +64,10 @@ function validateProject(project, directoryName) {
     fail(`${project.slug} needs a title.`);
   }
 
+  if (project.wip !== undefined && typeof project.wip !== "boolean") {
+    fail(`${project.slug} wip must be true or false.`);
+  }
+
   if (!project.hero?.desktopSrc || !project.hero?.mobileSrc || !project.hero?.alt) {
     fail(`${project.slug} needs desktopSrc, mobileSrc, and alt values in hero.`);
   }
@@ -179,13 +183,14 @@ function projectSummary(project) {
     order: project.order,
     slug: project.slug,
     title: project.title,
+    wip: project.wip === true,
     tags: project.tags || [],
     alt: project.hero.alt,
     aspectRatio: project.hero.aspectRatio || "16 / 9",
     desktopPath: project.hero.desktopSrc,
     mobilePath: project.hero.mobileSrc,
     poster: project.hero.poster || "",
-    detailPath: `/content/projects/${project.slug}/project.json`,
+    detailPath: `/content/projects/${project.slug}/project.json?v=2`,
     route: `/work/${project.slug}/`,
   };
 }

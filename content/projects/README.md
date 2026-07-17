@@ -5,6 +5,7 @@ Each directory contains one `project.json`; its directory name and `slug` must m
 ## Fields
 
 - `order`, `slug`, and `title` control the homepage and project-list order.
+- `wip` adds the blinking work-in-progress pill. Set it to `false` when the case is ready.
 - `summary` is the single introductory paragraph. Leave it empty to hide the paragraph.
 - `tags` is an optional list of short labels shown as pills in the accordion, such as `3D`, `Motion`, `AI`, and `Tool`.
 - `services` is an ordered list such as `Concept`, `Motion Design`, `Graphic Design`, and `Art Direction`.

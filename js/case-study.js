@@ -46,7 +46,7 @@ async function setupCaseStudies() {
   const caseScrollDuration = 240;
   const reduceCaseMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   const compactCaseMedia = window.matchMedia("(max-width: 760px), (hover: none), (pointer: coarse)");
-  const response = await fetch("/assets/projects/index.json?v=1");
+  const response = await fetch("/assets/projects/index.json?v=2");
 
   if (!response.ok) {
     throw new Error(`Unable to load project index: ${response.status}`);
@@ -716,16 +716,36 @@ async function setupCaseStudies() {
       title.textContent = project.title;
       tags.className = "case-study-project-tags";
       const projectTags = project.tags || [];
-      tags.setAttribute("aria-label", `Tags: ${projectTags.join(", ")}`);
-      projectTags.forEach((tag) => {
+      const tagLabels = project.wip
+        ? ["Work in progress", ...projectTags]
+        : projectTags;
+      tags.setAttribute("aria-label", `Tags: ${tagLabels.join(", ")}`);
+
+      const appendTag = (tag, { wip = false } = {}) => {
         const pill = document.createElement("span");
         const pillLabel = document.createElement("span");
         pill.className = "case-study-project-tag";
         pillLabel.className = "case-study-project-tag-label";
         pillLabel.textContent = tag;
         pill.append(pillLabel);
+
+        if (wip) {
+          const icon = document.createElement("span");
+          pill.classList.add("case-study-project-tag--wip");
+          icon.className = "case-study-project-tag-icon";
+          icon.textContent = "🚧";
+          icon.setAttribute("aria-hidden", "true");
+          pill.append(icon);
+        }
+
         tags.append(pill);
-      });
+      };
+
+      if (project.wip) {
+        appendTag("WIP", { wip: true });
+      }
+
+      projectTags.forEach((tag) => appendTag(tag));
       tags.hidden = tags.children.length === 0;
       panel.className = "case-study-accordion-panel";
       panel.id = panelId;
