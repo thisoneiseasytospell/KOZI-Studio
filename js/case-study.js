@@ -273,6 +273,7 @@ async function setupCaseStudies() {
     return (
       isOpen &&
       !document.hidden &&
+      !caseStudyLayer.classList.contains("is-ghosting") &&
       visibleVideos.has(video) &&
       video.dataset.userPaused !== "true"
     );
@@ -821,6 +822,15 @@ async function setupCaseStudies() {
   buildProjectList();
   bindVideoControl(caseHeroVideo, caseHeroToggle);
 
+  function transformRectToBase(rect, base) {
+    const translateX = rect.left - base.left;
+    const translateY = rect.top - base.top;
+    const scaleX = rect.width / base.width;
+    const scaleY = rect.height / base.height;
+
+    return `translate3d(${translateX}px, ${translateY}px, 0) scale(${scaleX}, ${scaleY})`;
+  }
+
   async function animateThumbnailIntoHero(origin) {
     if (
       reduceCaseMotion ||
@@ -829,6 +839,7 @@ async function setupCaseStudies() {
       !origin.video.currentSrc
     ) {
       caseStudyLayer.classList.remove("is-ghosting");
+      syncVideoPlayback(caseHeroVideo);
       return;
     }
 
@@ -838,6 +849,7 @@ async function setupCaseStudies() {
 
     if (start.width < 1 || start.height < 1 || end.width < 1 || end.height < 1) {
       caseStudyLayer.classList.remove("is-ghosting");
+      syncVideoPlayback(caseHeroVideo);
       return;
     }
 
@@ -845,10 +857,11 @@ async function setupCaseStudies() {
     const video = document.createElement("video");
     ghost.className = "case-study-transition-ghost";
     Object.assign(ghost.style, {
-      left: `${start.left}px`,
-      top: `${start.top}px`,
-      width: `${start.width}px`,
-      height: `${start.height}px`,
+      left: `${end.left}px`,
+      top: `${end.top}px`,
+      width: `${end.width}px`,
+      height: `${end.height}px`,
+      transformOrigin: "top left",
     });
     video.src = origin.video.currentSrc;
     video.muted = true;
@@ -861,39 +874,41 @@ async function setupCaseStudies() {
     document.body.append(ghost);
     video.play().catch(() => {});
 
-    ghostAnimation = ghost.animate(
+    const animation = ghost.animate(
       [
         {
-          left: `${start.left}px`,
-          top: `${start.top}px`,
-          width: `${start.width}px`,
-          height: `${start.height}px`,
+          transform: transformRectToBase(start, end),
           borderRadius: "0px",
         },
         {
-          left: `${end.left}px`,
-          top: `${end.top}px`,
-          width: `${end.width}px`,
-          height: `${end.height}px`,
+          transform: "translate3d(0, 0, 0) scale(1, 1)",
           borderRadius: "12px",
         },
       ],
       {
-        duration: 820,
+        duration: compactCaseMedia.matches ? 620 : 820,
         easing: "cubic-bezier(0.19, 1, 0.22, 1)",
         fill: "forwards",
       }
     );
+    ghostAnimation = animation;
 
     try {
-      await ghostAnimation.finished;
+      await animation.finished;
     } catch {
       // A new navigation can intentionally cancel the transition.
     }
 
+    if (ghostAnimation !== animation) {
+      ghost.remove();
+      return;
+    }
+
     ghostAnimation = null;
     caseStudyLayer.classList.remove("is-ghosting");
-    await new Promise((resolve) => window.setTimeout(resolve, 190));
+    syncVideoPlayback(caseHeroVideo);
+    const handoffDelay = compactCaseMedia.matches ? 140 : 190;
+    await new Promise((resolve) => window.setTimeout(resolve, handoffDelay));
     ghost.remove();
   }
 
@@ -934,6 +949,7 @@ async function setupCaseStudies() {
       width: `${start.width}px`,
       height: `${start.height}px`,
       borderRadius: "12px",
+      transformOrigin: "top left",
     });
     video.src = caseHeroVideo.currentSrc;
     video.muted = true;
@@ -949,22 +965,16 @@ async function setupCaseStudies() {
     const animation = ghost.animate(
       [
         {
-          left: `${start.left}px`,
-          top: `${start.top}px`,
-          width: `${start.width}px`,
-          height: `${start.height}px`,
+          transform: "translate3d(0, 0, 0) scale(1, 1)",
           borderRadius: "12px",
         },
         {
-          left: `${end.left}px`,
-          top: `${end.top}px`,
-          width: `${end.width}px`,
-          height: `${end.height}px`,
+          transform: transformRectToBase(end, start),
           borderRadius: "0px",
         },
       ],
       {
-        duration: 720,
+        duration: compactCaseMedia.matches ? 520 : 720,
         easing: "cubic-bezier(0.65, 0, 0.35, 1)",
         fill: "forwards",
       }
@@ -1027,9 +1037,12 @@ async function setupCaseStudies() {
     const previousPanel = previousItem.querySelector(".case-study-accordion-panel");
     const collapseDistance = previousPanel?.getBoundingClientRect().height || 0;
     const previousExpanded = previousItem.classList.contains("is-expanded");
+    const longCollapseThreshold = compactCaseMedia.matches
+      ? Math.max(560, caseStudyScroll.clientHeight * 0.9)
+      : Math.max(1200, caseStudyScroll.clientHeight * 1.35);
     const snapLongCollapse =
       previousExpanded &&
-      collapseDistance > Math.max(1200, caseStudyScroll.clientHeight * 1.35);
+      collapseDistance > longCollapseThreshold;
     const collapseDuration = previousExpanded && !snapLongCollapse
       ? accordionCollapseDuration
       : 0;
