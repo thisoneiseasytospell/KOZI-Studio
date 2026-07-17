@@ -6,10 +6,11 @@ Each directory contains one `project.json`; its directory name and `slug` must m
 
 - `order`, `slug`, and `title` control the homepage and project-list order.
 - `summary` is the single introductory paragraph. Leave it empty to hide the paragraph.
+- `tags` is an optional list of short labels shown as pills in the accordion, such as `3D`, `Motion`, `AI`, and `Tool`.
 - `services` is an ordered list such as `Concept`, `Motion Design`, `Graphic Design`, and `Art Direction`.
 - `credits` contains `{ "role": "...", "name": "..." }` objects.
 - `hero` supplies the homepage thumbnail and the large case-study video. Always provide optimized desktop and mobile files, concise alt text, and its natural aspect ratio.
-- `media` is the ordered sequence after the project information. It accepts image and video items, each with alt text and an optional caption.
+- `media` is the ordered sequence after the project information. It accepts images, videos, and interactive embeds. Images and videos need alt text; every item can have an optional caption.
 
 Example media items:
 
@@ -29,6 +30,13 @@ Example media items:
     "alt": "Description of the motion sequence",
     "aspectRatio": "16 / 9",
     "caption": "Optional caption"
+  },
+  {
+    "type": "embed",
+    "src": "/assets/interactive/project-tool/index.html",
+    "title": "Interactive project tool",
+    "aspectRatio": "16 / 10",
+    "caption": "Optional instruction or caption"
   }
 ]
 ```

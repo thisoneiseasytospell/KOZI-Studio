@@ -346,6 +346,61 @@ async function setupCaseStudies() {
       image.loading = "lazy";
       image.decoding = "async";
       figure.append(image);
+    } else if (media.type === "embed") {
+      const iframe = document.createElement("iframe");
+      const frame = document.createElement("div");
+      const toggle = document.createElement("button");
+      figure.classList.add("case-study-media--interactive");
+      frame.className = "case-study-interactive-frame";
+      iframe.src = media.src;
+      iframe.title = media.title;
+      iframe.loading = "lazy";
+      iframe.allow = "camera; fullscreen; clipboard-write";
+      iframe.referrerPolicy = "same-origin";
+      iframe.tabIndex = -1;
+      iframe.setAttribute(
+        "sandbox",
+        "allow-scripts allow-same-origin allow-downloads allow-forms allow-modals allow-pointer-lock"
+      );
+      iframe.setAttribute("allowfullscreen", "");
+      iframe.style.aspectRatio = String(ratioValue(media.aspectRatio));
+      toggle.className = "case-study-interactive-toggle";
+      toggle.type = "button";
+
+      const setInteractive = (active) => {
+        frame.classList.toggle("is-interactive", active);
+        toggle.textContent = active ? "Back to scrolling" : "Interact";
+        toggle.setAttribute("aria-pressed", String(active));
+        toggle.setAttribute(
+          "aria-label",
+          active ? "Return to case study scrolling" : `Interact with ${media.title}`
+        );
+        iframe.tabIndex = active ? 0 : -1;
+
+        if (active) {
+          requestAnimationFrame(() => iframe.focus({ preventScroll: true }));
+        }
+      };
+
+      toggle.addEventListener("click", () => {
+        setInteractive(!frame.classList.contains("is-interactive"));
+      });
+      iframe.addEventListener("load", () => {
+        try {
+          iframe.contentWindow.addEventListener("keydown", (event) => {
+            if (event.key === "Escape") {
+              event.preventDefault();
+              setInteractive(false);
+              toggle.focus({ preventScroll: true });
+            }
+          });
+        } catch {
+          // The visible toggle remains available if iframe access is restricted.
+        }
+      });
+      setInteractive(false);
+      frame.append(iframe, toggle);
+      figure.append(frame);
     } else {
       const video = document.createElement("video");
       const toggle = document.createElement("button");
@@ -461,7 +516,8 @@ async function setupCaseStudies() {
     }
 
     const scrollBounds = caseStudyScroll.getBoundingClientRect();
-    const itemBounds = item.getBoundingClientRect();
+    const anchor = item.querySelector("[data-case-project]") || item;
+    const itemBounds = anchor.getBoundingClientRect();
     const inset = 8;
     let target = caseStudyScroll.scrollTop;
 
@@ -535,8 +591,19 @@ async function setupCaseStudies() {
 
   function setProjectHoverColor(trigger) {
     hoverHue = (hoverHue + 137.508 + (Math.random() - 0.5) * 18) % 360;
+    const previousHue = Number(trigger.dataset.caseHoverHue);
+
+    if (Number.isFinite(previousHue)) {
+      const distance = Math.abs(((hoverHue - previousHue + 540) % 360) - 180);
+
+      if (distance < 54) {
+        hoverHue = (hoverHue + 96) % 360;
+      }
+    }
+
     const saturation = 78 + Math.random() * 12;
     const lightness = 54 + Math.random() * 14;
+    trigger.dataset.caseHoverHue = hoverHue.toFixed(1);
     trigger.style.setProperty(
       "--case-hover-color",
       `hsl(${hoverHue.toFixed(1)}deg ${saturation.toFixed(1)}% ${lightness.toFixed(1)}%)`
@@ -566,6 +633,7 @@ async function setupCaseStudies() {
       const trigger = document.createElement("button");
       const number = document.createElement("span");
       const title = document.createElement("span");
+      const tags = document.createElement("span");
       const panel = document.createElement("div");
       const panelInner = document.createElement("div");
       const triggerId = `case-study-trigger-${project.slug}`;
@@ -581,6 +649,19 @@ async function setupCaseStudies() {
       number.textContent = formatProjectNumber(project.order);
       title.className = "case-study-project-title";
       title.textContent = project.title;
+      tags.className = "case-study-project-tags";
+      const projectTags = project.tags || [];
+      tags.setAttribute("aria-label", `Tags: ${projectTags.join(", ")}`);
+      projectTags.forEach((tag) => {
+        const pill = document.createElement("span");
+        const pillLabel = document.createElement("span");
+        pill.className = "case-study-project-tag";
+        pillLabel.className = "case-study-project-tag-label";
+        pillLabel.textContent = tag;
+        pill.append(pillLabel);
+        tags.append(pill);
+      });
+      tags.hidden = tags.children.length === 0;
       panel.className = "case-study-accordion-panel";
       panel.id = panelId;
       panel.setAttribute("role", "region");
@@ -590,7 +671,15 @@ async function setupCaseStudies() {
       panelInner.inert = true;
       panel.append(panelInner);
 
-      trigger.append(number, title);
+      trigger.addEventListener("pointerenter", () => {
+        setProjectHoverColor(trigger);
+      });
+      trigger.addEventListener("focus", () => {
+        if (!trigger.matches(":hover")) {
+          setProjectHoverColor(trigger);
+        }
+      });
+      trigger.append(number, title, tags);
       item.append(trigger, panel);
       fragment.append(item);
     });
@@ -866,26 +955,58 @@ async function setupCaseStudies() {
 
     const previousPanel = previousItem.querySelector(".case-study-accordion-panel");
     const collapseDistance = previousPanel?.getBoundingClientRect().height || 0;
-    const collapseDuration = previousItem.classList.contains("is-expanded")
+    const previousExpanded = previousItem.classList.contains("is-expanded");
+    const snapLongCollapse =
+      previousExpanded &&
+      collapseDistance > Math.max(1200, caseStudyScroll.clientHeight * 1.35);
+    const collapseDuration = previousExpanded && !snapLongCollapse
       ? accordionCollapseDuration
       : 0;
     const targetFollowsPrevious = Boolean(
       previousItem.compareDocumentPosition(targetItem) &
       Node.DOCUMENT_POSITION_FOLLOWING
     );
+    const targetTrigger = targetItem.querySelector("[data-case-project]");
+    const targetTopBefore = targetTrigger?.getBoundingClientRect().top;
 
     pauseAllCaseVideos();
     setCurrentAccordionItem(targetItem);
+
+    if (snapLongCollapse) {
+      previousItem.classList.add("is-snap-collapsing");
+      cancelScrollAnimation();
+    }
+
     setAccordionExpanded(previousItem, false);
 
-    if (targetFollowsPrevious && collapseDistance > 0 && collapseDuration > 0) {
+    if (
+      snapLongCollapse &&
+      targetFollowsPrevious &&
+      Number.isFinite(targetTopBefore)
+    ) {
+      const targetTopAfter = targetTrigger.getBoundingClientRect().top;
+      caseStudyScroll.scrollTop = Math.max(
+        0,
+        caseStudyScroll.scrollTop + targetTopAfter - targetTopBefore
+      );
+      previousItem.classList.remove("is-snap-collapsing");
+    } else if (
+      targetFollowsPrevious &&
+      collapseDistance > 0 &&
+      collapseDuration > 0
+    ) {
       animateCaseScroll(
         caseStudyScroll.scrollTop - collapseDistance,
         collapseDuration
       );
     }
 
-    await waitForCaseMotion(collapseDuration);
+    if (snapLongCollapse) {
+      await nextCaseFrame();
+      previousItem.classList.remove("is-snap-collapsing");
+    } else {
+      await waitForCaseMotion(collapseDuration);
+    }
 
     if (token !== loadToken || !isOpen) {
       return null;

@@ -72,6 +72,14 @@ function validateProject(project, directoryName) {
     fail(`${project.slug} services and credits must be arrays.`);
   }
 
+  if (
+    project.tags !== undefined &&
+    (!Array.isArray(project.tags) ||
+      project.tags.some((tag) => typeof tag !== "string" || !tag.trim()))
+  ) {
+    fail(`${project.slug} tags must be an array of non-empty strings.`);
+  }
+
   if (!Array.isArray(project.media)) {
     fail(`${project.slug} media must be an array.`);
   }
@@ -83,11 +91,11 @@ function validateProject(project, directoryName) {
   });
 
   project.media.forEach((item, index) => {
-    if (!['image', 'video'].includes(item?.type)) {
-      fail(`${project.slug} media ${index + 1} must be an image or video.`);
+    if (!["image", "video", "embed"].includes(item?.type)) {
+      fail(`${project.slug} media ${index + 1} must be an image, video, or embed.`);
     }
 
-    if (!item.alt) {
+    if (["image", "video"].includes(item.type) && !item.alt) {
       fail(`${project.slug} media ${index + 1} needs alt text.`);
     }
 
@@ -97,6 +105,10 @@ function validateProject(project, directoryName) {
 
     if (item.type === "video" && (!item.desktopSrc || !item.mobileSrc)) {
       fail(`${project.slug} video ${index + 1} needs desktopSrc and mobileSrc.`);
+    }
+
+    if (item.type === "embed" && (!item.src || !item.title)) {
+      fail(`${project.slug} embed ${index + 1} needs src and title.`);
     }
   });
 }
@@ -128,7 +140,7 @@ async function loadProjects() {
     }
 
     for (const [index, item] of project.media.entries()) {
-      if (item.type === "image") {
+      if (item.type === "image" || item.type === "embed") {
         await assertAsset(item.src, `${project.slug} media ${index + 1}`);
       } else {
         await assertAsset(item.desktopSrc, `${project.slug} media ${index + 1}`);
@@ -167,6 +179,7 @@ function projectSummary(project) {
     order: project.order,
     slug: project.slug,
     title: project.title,
+    tags: project.tags || [],
     alt: project.hero.alt,
     aspectRatio: project.hero.aspectRatio || "16 / 9",
     desktopPath: project.hero.desktopSrc,

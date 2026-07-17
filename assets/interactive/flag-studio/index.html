@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WdKA Gradshow 2026</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<canvas id="c"></canvas>
+
+<!-- Panel -->
+<div class="panel" id="panel">
+  <div class="panel-header">
+    <div class="panel-title">WdKA Gradshow 2026</div>
+    <button class="panel-close" id="panelClose"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
+  </div>
+  <div class="panel-tabs">
+    <button class="panel-tab active" data-tab="studio">Studio</button>
+    <button class="panel-tab" data-tab="wind">Wind</button>
+    <button class="panel-tab" data-tab="export">Export</button>
+  </div>
+  <div class="panel-body">
+    <div class="tab-content active" id="tabStudio">
+
+    <div class="section" id="sectionLooks">
+      <div class="section-label">Looks</div>
+      <div class="pill-row" id="lookRow" style="gap:5px">
+        <button class="pill active" data-look="gradshow">GradShow</button>
+        <button class="pill" data-look="bw-toggle">B&W</button>
+        <button class="pill" data-look="kinetic">Kinetic</button>
+        <button class="pill" data-look="storm-signal">Storm</button>
+        <button class="pill" data-look="moon">Moon</button>
+        <button class="pill" data-look="camera">Camera</button>
+      </div>
+    </div>
+
+    <!-- Aspect Ratio -->
+    <div class="section" id="sectionRatio">
+      <div class="section-label">Aspect Ratio</div>
+      <div class="pill-row" id="ratioRow" style="gap:5px">
+        <button class="ratio-btn" data-r="4:7"><div class="shape" style="width:28px;height:16px"></div><span class="lbl">4:7</span></button>
+        <button class="ratio-btn" data-r="3:2"><div class="shape" style="width:16px;height:24px"></div><span class="lbl">3:2</span></button>
+        <button class="ratio-btn" data-r="1:1"><div class="shape" style="width:20px;height:20px"></div><span class="lbl">1:1</span></button>
+        <button class="ratio-btn active" data-r="2:3"><div class="shape" style="width:24px;height:16px"></div><span class="lbl">2:3</span></button>
+        <button class="ratio-btn" data-r="1:2"><div class="shape" style="width:28px;height:14px"></div><span class="lbl">1:2</span></button>
+      </div>
+      <div class="custom-ratio" id="customRatio">
+        <div class="mini-flag-preview">
+          <div class="mini-flag-stage" id="miniFlagStage">
+            <div class="mini-flag-rect" id="miniFlagRect">
+              <svg class="mini-shape-svg" id="miniShapeSvg" viewBox="0 0 1 1" preserveAspectRatio="none" aria-hidden="true"><polygon id="miniShapePoly" fill-rule="evenodd"/></svg>
+              <div class="mini-edge mini-edge-top" data-edge="h"></div>
+              <div class="mini-edge mini-edge-bottom" data-edge="h"></div>
+              <div class="mini-edge mini-edge-left" data-edge="w"></div>
+              <div class="mini-edge mini-edge-right" data-edge="w"></div>
+              <div class="mini-handle mini-handle-corner" data-handle="wh" title="Drag to resize"></div>
+              <div class="mini-dim mini-dim-w" id="miniDimW" tabindex="0" role="textbox" aria-label="Width">3.0</div>
+              <div class="mini-dim mini-dim-h" id="miniDimH" tabindex="0" role="textbox" aria-label="Height">2.0</div>
+            </div>
+          </div>
+        </div>
+        <button type="button" class="csv-template-link" id="shapeResetBtn" style="display:none">↺ Reset shape</button>
+      </div>
+    </div>
+
+    <!-- Text -->
+    <div class="section" id="sectionText">
+      <div class="section-label">Text</div>
+      <div class="text-input-wrap">
+        <textarea id="textInput" rows="3" placeholder="Type a short paragraph…"></textarea>
+      </div>
+      <div class="style-row">
+        <select id="fontSelect" class="font-select" aria-label="Text font">
+          <option value="jubilee">OT Jubilee Platinum</option>
+          <option value="diatype">ABC Diatype</option>
+        </select>
+        <button type="button" class="pill font-scan-btn" id="fontScanBtn">Local</button>
+        <span class="style-divider"></span>
+        <div class="pill-row" id="layoutRow">
+          <button class="pill icon-pill active" data-layout="repeat" title="Repeat">
+            <svg viewBox="0 0 12 12" fill="currentColor" aria-hidden="true"><rect x="1" y="1" width="3.5" height="3.5" rx="0.6"/><rect x="7.5" y="1" width="3.5" height="3.5" rx="0.6"/><rect x="1" y="7.5" width="3.5" height="3.5" rx="0.6"/><rect x="7.5" y="7.5" width="3.5" height="3.5" rx="0.6"/></svg>
+          </button>
+          <button class="pill icon-pill" data-layout="centered" title="Centered">
+            <svg viewBox="0 0 12 12" fill="currentColor" aria-hidden="true"><rect x="3" y="4" width="6" height="4" rx="0.6"/></svg>
+          </button>
+        </div>
+      </div>
+      <div class="control-row" style="margin-top:10px">
+        <div class="control-label">
+          <span class="control-name">Size</span>
+          <span class="control-value" id="fontSizeVal">120</span>
+        </div>
+        <input type="range" id="fontSize" min="4" max="400" value="120">
+      </div>
+      <div class="control-row">
+        <div class="control-label">
+          <span class="control-name">Line height</span>
+          <span class="control-value" id="lineHeightVal">0.85</span>
+        </div>
+        <input type="range" id="lineHeight" min="50" max="300" value="85">
+      </div>
+      <div class="control-row">
+        <div class="control-label">
+          <span class="control-name">Scroll speed</span>
+          <span class="control-value" id="scrollVal">0</span>
+        </div>
+        <input type="range" id="scrollSpeed" min="0" max="200" value="0">
+      </div>
+    </div>
+
+    <div class="section" id="sectionColors">
+      <div class="section-label">Colors</div>
+      <div class="control-row">
+        <div class="color-pair">
+          <div class="color-item">
+            <span class="color-item-label">Text</span>
+            <div class="color-swatch"><input type="color" id="textColor" value="#016F17"></div>
+            <input type="text" class="hex-input" id="textColorHex" value="#016F17" maxlength="7" spellcheck="false">
+          </div>
+          <div class="color-item">
+            <span class="color-item-label">Background</span>
+            <div class="color-swatch"><input type="color" id="bgColor" value="#D4FED3"></div>
+            <input type="text" class="hex-input" id="bgColorHex" value="#D4FED3" maxlength="7" spellcheck="false">
+          </div>
+        </div>
+      </div>
+      <div class="bg-source-row">
+        <label for="bgModeSelect">BG source</label>
+        <select id="bgModeSelect" class="font-select">
+          <option value="color">Color</option>
+          <option value="picture">Picture</option>
+          <option value="video">Video</option>
+        </select>
+        <button type="button" class="pill bg-pick-btn" id="bgPickBtn">Choose</button>
+        <button type="button" class="pill bg-clear-btn" id="bgClearBtn">Clear</button>
+        <input type="file" id="bgMediaInput" accept="image/*,video/*" hidden>
+      </div>
+    </div>
+
+    <!-- Graphic -->
+    <div class="section" id="sectionImage">
+      <div class="section-label">Graphic</div>
+      <div class="dropzone" id="dropzone">
+        <svg class="dropzone-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/>
+        </svg>
+        <div class="dropzone-text"><strong>Drop image</strong> or click to browse</div>
+        <div class="dropzone-hint">PNG, JPG, WebP</div>
+        <input type="file" id="fileInput" accept="image/png,image/jpeg,image/webp">
+      </div>
+      <div class="image-action-row">
+        <button type="button" class="pill image-action-btn" id="cameraBtn">Live Camera</button>
+        <input type="file" id="cameraInput" accept="image/*" capture="environment" hidden>
+      </div>
+      <div class="texture-preview" id="texPreview">
+        <img id="previewImg">
+        <video id="previewVideo" autoplay playsinline muted></video>
+        <button class="texture-remove" id="removeTexture">&times;</button>
+      </div>
+      <div class="fit-toggle" id="fitToggle" style="display:none">
+        <button data-mode="stretch">Stretch</button>
+        <button class="active" data-mode="fit">Fit</button>
+      </div>
+    </div>
+
+    <button class="btn-reset" id="resetBtn">Reset All</button>
+    </div>
+    <div class="tab-content" id="tabWind">
+      <div class="section">
+        <div class="section-label">Weather</div>
+        <div class="pill-row" id="weatherRow" style="gap:5px">
+          <button class="pill active" data-weather="normal">Normal</button>
+          <button class="pill" data-weather="storm">Storm</button>
+        </div>
+      </div>
+      <div class="section">
+        <div class="section-label">Attachment</div>
+        <div class="pill-row" id="attachRow" style="gap:5px">
+          <button class="pill" data-attach="edge">Full edge</button>
+          <button class="pill active" data-attach="corners">Two corners</button>
+        </div>
+      </div>
+      <div class="section">
+        <div class="section-label">Wind</div>
+        <div class="control-row">
+          <div class="control-label">
+            <span class="control-name">Strength</span>
+            <span class="control-value" id="windVal">100</span>
+          </div>
+          <input type="range" id="windStrength" min="0" max="300" value="100">
+        </div>
+        <div class="control-row">
+          <div class="control-label">
+            <span class="control-name">Turbulence</span>
+            <span class="control-value" id="turbVal">30</span>
+          </div>
+          <input type="range" id="turbulence" min="0" max="100" value="30">
+        </div>
+        <div class="control-row">
+          <div class="control-label">
+            <span class="control-name">Gravity</span>
+            <span class="control-value" id="gravityVal">-1.0</span>
+          </div>
+          <input type="range" id="gravity" min="-100" max="100" value="-10" step="1">
+        </div>
+      </div>
+    </div>
+    <div class="tab-content" id="tabExport">
+      <div class="section">
+        <div class="section-label">Presets</div>
+        <div class="pill-row" id="someRow" style="gap:5px">
+          <button class="pill active" data-some="1:1">1:1</button>
+          <button class="pill" data-some="4:5">4:5</button>
+          <button class="pill" data-some="9:16">9:16</button>
+          <button class="pill" data-some="16:9">16:9</button>
+          <button class="pill" data-some="print">Name Tags Print</button>
+          <button class="pill" data-some="tagsvideo">Name Tags Video</button>
+          <button class="pill" data-some="student">Student Takeover</button>
+        </div>
+      </div>
+      <div class="section" id="batchSection" style="display:none">
+        <div class="section-label" id="batchSectionLabel">Batch · CSV → ZIP</div>
+        <div class="dropzone" id="csvDrop">
+          <svg class="dropzone-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/>
+          </svg>
+          <div class="dropzone-text"><strong>Drop CSV</strong> or click to browse</div>
+          <div class="dropzone-hint">project, name, extra, www · up to 300 rows · use <strong>|</strong> in a cell for a line break</div>
+          <input type="file" id="csvInput" accept=".csv,text/csv">
+        </div>
+        <button type="button" class="csv-template-link" id="csvTemplateBtn">↓ Download blank template (.csv)</button>
+        <div class="batch-status" id="batchStatus">No CSV loaded</div>
+        <label class="matte-row"><input type="checkbox" id="matteToggle" checked> Matte — no glare (print)</label>
+        <button class="btn-export" id="batchExportBtn" disabled>Export ZIP · A5 300dpi</button>
+        <button class="btn-export" id="batchPdfBtn" style="margin-top:8px" disabled>Export PDF · A5 300dpi (multi-page)</button>
+        <button class="btn-export" id="batchVideoBtn" style="display:none" disabled>Export MP4 per row · 10s</button>
+      </div>
+      <div class="section">
+        <div class="section-label">Size</div>
+        <div class="size-inputs">
+          <div class="size-field">
+            <label for="sizeW">W</label>
+            <input type="number" id="sizeW" class="hex-input size-num" min="64" max="16384" step="1" value="1080">
+          </div>
+          <span class="size-x">×</span>
+          <div class="size-field">
+            <label for="sizeH">H</label>
+            <input type="number" id="sizeH" class="hex-input size-num" min="64" max="16384" step="1" value="1080">
+          </div>
+          <span class="size-unit">px</span>
+        </div>
+      </div>
+      <div class="section">
+        <div class="section-label">Sound</div>
+        <div class="pill-row" id="audioRow" style="gap:5px">
+          <button class="pill" data-audio="1">1</button>
+          <button class="pill" data-audio="2">2</button>
+          <button class="pill" data-audio="3">3</button>
+          <button class="pill" data-audio="4">4</button>
+        </div>
+      </div>
+      <div class="section" id="ffiSection" style="display:none">
+        <div class="section-label">Name Tag Text</div>
+        <div class="ffi-layout">
+          <div class="ffi-layout-flag" id="ffiLayoutFlag">
+            <div class="ffi-layout-block" data-fblock="0"><span>1</span></div>
+            <div class="ffi-layout-block" data-fblock="1"><span>2</span></div>
+            <div class="ffi-layout-block" data-fblock="2"><span>3</span></div>
+            <div class="ffi-layout-block" data-fblock="3"><span>4</span></div>
+          </div>
+        </div>
+        <div class="ffi-block" data-block="0">
+          <div class="ffi-block-head"><span class="ffi-block-num">1</span></div>
+          <textarea class="hex-input ffi-text ffi-textarea" id="ffiText0" rows="2" spellcheck="false">What Design
+Can't Do</textarea>
+          <div class="control-row">
+            <div class="control-label">
+              <span class="control-name">Size</span>
+              <span class="control-value" id="ffiSizeVal0">78</span>
+            </div>
+            <input type="range" class="ffi-size" id="ffiSize0" min="20" max="200" value="78">
+          </div>
+        </div>
+        <div class="ffi-block" data-block="1">
+          <div class="ffi-block-head"><span class="ffi-block-num">2</span></div>
+          <textarea class="hex-input ffi-text ffi-textarea" id="ffiText1" rows="1" spellcheck="false">Albert Kozikowski</textarea>
+          <div class="control-row">
+            <div class="control-label">
+              <span class="control-name">Size</span>
+              <span class="control-value" id="ffiSizeVal1">35</span>
+            </div>
+            <input type="range" class="ffi-size" id="ffiSize1" min="10" max="120" value="35">
+          </div>
+        </div>
+        <div class="ffi-block" data-block="2">
+          <div class="ffi-block-head"><span class="ffi-block-num">3</span></div>
+          <textarea class="hex-input ffi-text ffi-textarea" id="ffiText2" rows="1" spellcheck="false">Graphic Design</textarea>
+          <div class="control-row">
+            <div class="control-label">
+              <span class="control-name">Size</span>
+              <span class="control-value" id="ffiSizeVal2">35</span>
+            </div>
+            <input type="range" class="ffi-size" id="ffiSize2" min="10" max="120" value="35">
+          </div>
+        </div>
+        <div class="ffi-block" data-block="3">
+          <div class="ffi-block-head"><span class="ffi-block-num">4</span><span class="ffi-block-font">www / IG</span></div>
+          <textarea class="hex-input ffi-text ffi-textarea" id="ffiText3" rows="1" spellcheck="false">@albertkozikowski</textarea>
+          <div class="control-row">
+            <div class="control-label">
+              <span class="control-name">Size</span>
+              <span class="control-value" id="ffiSizeVal3">26</span>
+            </div>
+            <input type="range" class="ffi-size" id="ffiSize3" min="10" max="120" value="26">
+          </div>
+        </div>
+      </div>
+      <div class="section" id="clothSection">
+        <div class="section-label">Cloth</div>
+        <div class="pill-row" id="clothModeRow" style="gap:5px">
+          <button class="pill active" data-cloth="full">Full</button>
+          <button class="pill" data-cloth="slight">Slight wave</button>
+          <button class="pill" data-cloth="flat">Flat</button>
+        </div>
+        <div class="control-row" id="gentleStrengthRow" style="display:none; margin-top:10px">
+          <div class="control-label">
+            <span class="control-name">Strength</span>
+            <span class="control-value" id="gentleStrengthVal">50</span>
+          </div>
+          <input type="range" id="gentleStrength" min="5" max="200" value="50">
+        </div>
+        <label class="matte-row" style="margin-top:10px"><input type="checkbox" id="unlitToggle"> True color — no shading (exact print)</label>
+      </div>
+      <div class="section">
+        <div class="section-label">Export</div>
+        <div class="pill-row" id="loopModeRow" style="gap:5px; margin-bottom:10px">
+          <button class="pill active" data-loop="seamless">Seamless Loop</button>
+          <button class="pill" data-loop="cut">Raw Cut</button>
+        </div>
+        <button class="btn-export" id="someExportBtn">Export 10s Video</button>
+        <button class="btn-export" id="someSeqBtn" style="margin-top:8px">Export PNG sequence</button>
+        <button class="btn-export" id="exportBtn" style="margin-top:8px">Export PNG</button>
+        <button class="btn-export" id="pdfBtn" style="margin-top:8px">Export PDF</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Panel toggle -->
+<button class="panel-toggle" id="panelToggle">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+</button>
+
+<!-- Mobile quick controls -->
+<div class="mobile-toolbar" id="mobileToolbar" aria-label="Mobile quick controls">
+  <button type="button" class="mobile-tool" data-mobile-sheet="text" aria-label="Text controls">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 6h16M9 6v12M15 6v12M7 18h10"/></svg>
+    <span>Text</span>
+  </button>
+  <button type="button" class="mobile-tool" data-mobile-sheet="image" aria-label="Image controls">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="4" y="5" width="16" height="14" rx="2"/><path d="M8 13l2.5-2.5L15 15l1.5-1.5L20 17"/><circle cx="9" cy="9" r="1.2"/></svg>
+    <span>Image</span>
+  </button>
+  <button type="button" class="mobile-tool" data-mobile-sheet="colors" aria-label="Color controls">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 3a9 9 0 100 18h1.2a1.8 1.8 0 001.2-3.15 1.6 1.6 0 011.1-2.75H17a4 4 0 004-4C21 6.6 17 3 12 3z"/><circle cx="7.5" cy="10" r="1"/><circle cx="10.5" cy="7.5" r="1"/><circle cx="14" cy="7.5" r="1"/></svg>
+    <span>Colors</span>
+  </button>
+  <button type="button" class="mobile-tool" data-mobile-sheet="ratio" aria-label="Ratio controls">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="5" y="7" width="14" height="10" rx="1.5"/><path d="M9 7v10M15 7v10"/></svg>
+    <span>Ratio</span>
+  </button>
+  <button type="button" class="mobile-tool" data-mobile-sheet="export" aria-label="Export controls">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M5 19h14"/></svg>
+    <span>Export</span>
+  </button>
+</div>
+
+<div class="mobile-sheet-backdrop" id="mobileSheetBackdrop"></div>
+<div class="mobile-sheet" id="mobileSheet" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="mobileSheetTitle">
+  <div class="mobile-sheet-header">
+    <div class="mobile-sheet-title" id="mobileSheetTitle">Controls</div>
+    <button type="button" class="mobile-sheet-close" id="mobileSheetClose" aria-label="Close controls">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12"/></svg>
+    </button>
+  </div>
+  <div class="mobile-sheet-body" id="mobileSheetBody"></div>
+</div>
+
+<!-- Global drop overlay -->
+<div class="global-drop-overlay" id="globalDrop">
+  <div class="global-drop-content">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+    <p>Drop to apply</p>
+    <span>PNG, JPG, WebP</span>
+  </div>
+</div>
+
+<!-- SoMe crop frame -->
+<div class="some-frame" id="someFrame">
+  <div class="some-guides"></div>
+  <div class="some-label" id="someLabel">1:1 · 1080×1080</div>
+</div>
+
+<!-- Orbit ball -->
+<div class="orbit-ball" id="orbitBall">
+  <div class="orbit-ball-ring orbit-ball-equator"></div>
+  <div class="orbit-ball-ring orbit-ball-meridian"></div>
+  <div class="orbit-ball-dot" id="orbitDot"></div>
+</div>
+
+<script src="js/app.js"></script>
+</body>
+</html>

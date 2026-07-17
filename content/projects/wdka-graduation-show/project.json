@@ -4,6 +4,12 @@
   "order": 1,
   "title": "WdKA Graduation 2026",
   "summary": "A vibrant campaign system for the 2026 graduation show, bringing together the work of a new generation of makers through a flexible identity built for screens, spaces and motion.",
+  "tags": [
+    "3D",
+    "Motion",
+    "AI",
+    "Tool"
+  ],
   "services": [
     "Creative Direction",
     "Motion Design",
@@ -27,5 +33,29 @@
     "alt": "Motion design for WdKA Graduation 2026",
     "aspectRatio": "16 / 9"
   },
-  "media": []
+  "media": [
+    {
+      "type": "video",
+      "desktopSrc": "/assets/projects/wdka-graduation-show/wdka-grad-final.mp4",
+      "mobileSrc": "/assets/projects/wdka-graduation-show/wdka-grad-final.mp4",
+      "alt": "Final WdKA graduation campaign motion sequence",
+      "aspectRatio": "16 / 9",
+      "caption": "Graduation show identity in motion."
+    },
+    {
+      "type": "embed",
+      "src": "/assets/interactive/flag-studio/index.html",
+      "title": "Interactive WdKA Flag Studio",
+      "aspectRatio": "16 / 10",
+      "caption": "Interactive prototype — switch to Interact to make a flag, then back to Scroll to continue."
+    },
+    {
+      "type": "video",
+      "desktopSrc": "/assets/projects/wdka-graduation-show/flag-studio-demo.mp4",
+      "mobileSrc": "/assets/projects/wdka-graduation-show/flag-studio-demo.mp4",
+      "alt": "Demonstration of the interactive Flag Studio",
+      "aspectRatio": "16 / 9",
+      "caption": "A short Flag Studio workflow."
+    }
+  ]
 }
