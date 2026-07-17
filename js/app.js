@@ -266,7 +266,12 @@ async function setupWorkStage() {
   let idlePosition = null;
   let idleLastTime = performance.now();
   const idleSpeed = coarsePointer.matches ? 39 : 53;
-  const idleStartAngle = Math.random() * Math.PI * 2;
+  // On mobile, begin the idle float sideways/downward so the first visible
+  // movement never looks like the video is immediately escaping upward.
+  // Subsequent steering and edge bounces still let it roam in every direction.
+  const idleStartAngle = coarsePointer.matches
+    ? Math.PI * (1 / 12 + Math.random() * 5 / 6)
+    : Math.random() * Math.PI * 2;
   let idleVelocity = {
     x: Math.cos(idleStartAngle) * idleSpeed,
     y: Math.sin(idleStartAngle) * idleSpeed,
