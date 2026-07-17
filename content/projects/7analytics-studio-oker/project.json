@@ -5,6 +5,17 @@
   "title": "7Analytics",
   "wip": false,
   "summary": "For 7Analytics, I developed a generative particle system that became a dynamic visual element within the identity, connecting climate, nature and technology. The system transforms data-inspired structures into an evolving texture that balances natural unpredictability with mathematical precision. I also contributed motion design to the brand film, helping bring the visual system to life across moving image.",
+  "summaryLink": {
+    "label": "Read more on Behance",
+    "href": "https://www.behance.net/gallery/206684521/7Analytics"
+  },
+  "recognition": [
+    {
+      "name": "Featured on Behance",
+      "href": "https://www.behance.net/gallery/206684521/7Analytics",
+      "variant": "behance"
+    }
+  ],
   "tags": [
     "Motion",
     "Code"

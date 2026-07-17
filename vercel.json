@@ -2,6 +2,38 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "buildCommand": "npm run build",
   "outputDirectory": ".",
+  "redirects": [
+    {
+      "source": "/About",
+      "destination": "/",
+      "permanent": true
+    },
+    {
+      "source": "/About/:path*",
+      "destination": "/",
+      "permanent": true
+    },
+    {
+      "source": "/about",
+      "destination": "/",
+      "permanent": true
+    },
+    {
+      "source": "/about/:path*",
+      "destination": "/",
+      "permanent": true
+    },
+    {
+      "source": "/work/houdini-research/:path*",
+      "destination": "/work/3d-research/",
+      "permanent": true
+    },
+    {
+      "source": "/work/cinema4d-research/:path*",
+      "destination": "/work/3d-research/",
+      "permanent": true
+    }
+  ],
   "headers": [
     {
       "source": "/assets/videos/optimized/:path*",

@@ -17,7 +17,18 @@
     "Motion"
   ],
   "services": [],
-  "credits": [],
+  "creditsHeading": "Models used",
+  "credits": [
+    {
+      "name": "Hunyuan 3D"
+    },
+    {
+      "name": "Opus 4.8"
+    },
+    {
+      "name": "GPT 5.5"
+    }
+  ],
   "hero": {
     "desktopSrc": "/assets/videos/optimized/02-demonew-1440-v1-03ad36cfea.mp4",
     "mobileSrc": "/assets/videos/optimized/02-demonew-960-v1-03ad36cfea.mp4",

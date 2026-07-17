@@ -1,8 +1,9 @@
 {
   "schemaVersion": 1,
   "slug": "cinema4d-research",
+  "caseStudySlug": "3d-research",
   "order": 8,
-  "title": "Cinema4D Research",
+  "title": "3D Research",
   "wip": true,
   "summary": "",
   "services": [],

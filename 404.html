@@ -5,7 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>404 | KOZI Studio</title>
     <meta name="robots" content="noindex, follow">
-    <meta name="theme-color" content="#f1f0eb">
+    <meta name="theme-color" content="#f1f0eb" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#0c0c0b" media="(prefers-color-scheme: dark)">
 
     <!-- Vercel Web Analytics and Speed Insights -->
     <script>
@@ -22,6 +23,16 @@
     <style>
       :root {
         background: #f1f0eb;
+        color: #050505;
+        color-scheme: light;
+      }
+
+      @media (prefers-color-scheme: dark) {
+        :root {
+          background: #0c0c0b;
+          color: #f1f0eb;
+          color-scheme: dark;
+        }
       }
 
       * {
@@ -35,6 +46,23 @@
         min-height: 100svh;
         padding: 16px;
         place-items: center;
+      }
+
+      a {
+        color: inherit;
+        display: block;
+        font-family: Arial, sans-serif;
+        font-size: 12px;
+        margin-top: 16px;
+        text-decoration: none;
+        width: max-content;
+      }
+
+      a:hover,
+      a:focus-visible {
+        text-decoration: underline;
+        text-decoration-thickness: 1px;
+        text-underline-offset: 2px;
       }
 
       h1 {
@@ -72,6 +100,7 @@
         referrerpolicy="strict-origin-when-cross-origin"
         allowfullscreen
       ></iframe>
+      <a href="/">Go to homepage</a>
     </main>
   </body>
 </html>

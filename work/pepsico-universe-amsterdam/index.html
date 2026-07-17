@@ -26,7 +26,8 @@
     <title>PepsiCo | KOZI Studio</title>
     <meta name="description" content="For Pepsi’s global rebrand launch outside North America, I contributed fast-cut sequences, 2D motion design and one 3D sequence to the Titan Sizzle film at UNI_VERSE. The project translated Pepsi’s new visual identity into a bold and energetic launch film.">
     <meta name="robots" content="noindex, follow, max-image-preview:large">
-    <meta name="theme-color" content="#f1f0eb">
+    <meta name="theme-color" content="#f1f0eb" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#0c0c0b" media="(prefers-color-scheme: dark)">
     <link rel="canonical" href="https://www.kozi.studio/work/pepsico-universe-amsterdam/">
 
     <meta property="og:locale" content="en_US">
@@ -73,9 +74,9 @@
     >
     <link rel="apple-touch-icon" href="./apple-touch-icon.png">
     <link rel="preload" href="./assets/fonts/ABCDiatype-Regular.otf" as="font" type="font/otf" crossorigin>
-    <link rel="stylesheet" href="./css/style.css?v=77">
-    <script src="./js/app.js?v=47" defer></script>
-    <script src="./js/case-study.js?v=33" defer></script>
+    <link rel="stylesheet" href="./css/style.css?v=86">
+    <script src="./js/app.js?v=51" defer></script>
+    <script src="./js/case-study.js?v=46" defer></script>
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",
@@ -153,6 +154,9 @@
         </div>
       </div>
       <p class="copyright">&copy;2026</p>
+      <button class="rtm-clock" type="button" data-rtm-clock aria-pressed="false">
+        <span class="rtm-clock-location">Rotterdam, NL</span><time data-rtm-time><span data-rtm-hour>00</span><span class="rtm-clock-colon">:</span><span data-rtm-minute>00</span><span data-rtm-period>am</span></time>
+      </button>
     </header>
 
     <main>
@@ -170,7 +174,7 @@
         </p>
 
         <p class="video-loading" data-video-loading role="status">Loading&hellip;</p>
-        <button class="motion-permission" type="button" hidden>Enable gyro</button>
+        <button class="motion-permission" type="button" hidden>Enable motion</button>
         <p class="visually-hidden" data-stage-status aria-live="polite"></p>
       </section>
     </main>
@@ -238,7 +242,9 @@
                 </section>
 
                 <section class="case-study-credits" data-case-credits-section hidden>
-                  <h3>Credits</h3>
+                  <div class="case-study-recognition" data-case-recognition hidden></div>
+                  <div class="case-study-awards" data-case-awards hidden></div>
+                  <h3 data-case-credits-heading>Credits</h3>
                   <dl data-case-credits></dl>
                 </section>
               </div>
