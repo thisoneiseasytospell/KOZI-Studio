@@ -81,9 +81,9 @@
     >
     <link rel="apple-touch-icon" href="./apple-touch-icon.png">
     <link rel="preload" href="./assets/fonts/ABCDiatype-Regular.otf" as="font" type="font/otf" crossorigin>
-    <link rel="stylesheet" href="./css/style.css?v=62">
-    <script src="./js/app.js?v=42" defer></script>
-    <script src="./js/case-study.js?v=21" defer></script>
+    <link rel="stylesheet" href="./css/style.css?v=63">
+    <script src="./js/app.js?v=43" defer></script>
+    <script src="./js/case-study.js?v=22" defer></script>
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",
@@ -194,7 +194,14 @@
         aria-labelledby="case-study-title"
         tabindex="-1"
       >
-        <span class="case-study-escape" aria-hidden="true">esc</span>
+        <button
+          class="case-study-escape"
+          type="button"
+          data-case-escape
+          aria-label="Close case study"
+        >
+          esc
+        </button>
 
         <div class="case-study-scroll" data-case-scroll>
           <article class="case-study-article" data-case-article>
@@ -222,14 +229,6 @@
                   playsinline
                   preload="metadata"
                 ></video>
-                <button
-                  class="case-video-toggle"
-                  type="button"
-                  data-case-hero-toggle
-                  aria-label="Pause project video"
-                >
-                  Pause
-                </button>
               </div>
 
               <header class="case-study-heading">

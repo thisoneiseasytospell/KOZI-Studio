@@ -5,6 +5,7 @@ const caseStudyScroll = document.querySelector("[data-case-scroll]");
 const caseStudyArticle = document.querySelector("[data-case-article]");
 const caseStudyContent = document.querySelector("[data-case-content]");
 const caseStudyClose = document.querySelector("[data-case-close]");
+const caseStudyEscape = document.querySelector("[data-case-escape]");
 const caseHeadingNumber = document.querySelector("[data-case-heading-number]");
 const caseStudyTitle = document.querySelector("[data-case-title]");
 const caseStudySummary = document.querySelector("[data-case-summary]");
@@ -15,7 +16,6 @@ const caseCreditsSection = document.querySelector("[data-case-credits-section]")
 const caseCredits = document.querySelector("[data-case-credits]");
 const caseHero = document.querySelector("[data-case-hero]");
 const caseHeroVideo = document.querySelector("[data-case-hero-video]");
-const caseHeroToggle = document.querySelector("[data-case-hero-toggle]");
 const caseGallery = document.querySelector("[data-case-gallery]");
 const caseProjectList = document.querySelector("[data-case-project-list]");
 const caseStatus = document.querySelector("[data-case-status]");
@@ -28,10 +28,10 @@ if (
   caseStudyArticle &&
   caseStudyContent &&
   caseStudyClose &&
+  caseStudyEscape &&
   caseStudyTitle &&
   caseHero &&
   caseHeroVideo &&
-  caseHeroToggle &&
   caseProjectList
 ) {
   setupCaseStudies().catch((error) => {
@@ -259,23 +259,12 @@ async function setupCaseStudies() {
     });
   }
 
-  function syncVideoButton(video, button) {
-    const paused = video.paused || video.dataset.userPaused === "true";
-    button.textContent = paused ? "Play" : "Pause";
-    button.setAttribute(
-      "aria-label",
-      `${paused ? "Play" : "Pause"} ${video.getAttribute("aria-label") || "project video"}`
-    );
-    button.classList.toggle("is-paused", paused);
-  }
-
   function shouldVideoPlay(video) {
     return (
       isOpen &&
       !document.hidden &&
       !caseStudyLayer.classList.contains("is-ghosting") &&
-      visibleVideos.has(video) &&
-      video.dataset.userPaused !== "true"
+      visibleVideos.has(video)
     );
   }
 
@@ -289,39 +278,18 @@ async function setupCaseStudies() {
     } else {
       video.pause();
     }
-
-    const button = video.closest(".case-study-hero, .case-study-media")
-      ?.querySelector(".case-video-toggle");
-
-    if (button) {
-      syncVideoButton(video, button);
-    }
   }
 
-  function bindVideoControl(video, button) {
+  function bindMutedVideo(video) {
     video.muted = true;
     video.defaultMuted = true;
     video.volume = 0;
-    video.dataset.userPaused = "false";
     video.addEventListener("volumechange", () => {
       if (!video.muted || video.volume !== 0) {
         video.muted = true;
         video.volume = 0;
       }
     });
-    video.addEventListener("play", () => syncVideoButton(video, button));
-    video.addEventListener("pause", () => syncVideoButton(video, button));
-    button.addEventListener("click", () => {
-      const userPaused = video.dataset.userPaused === "true";
-      video.dataset.userPaused = String(!userPaused);
-
-      if (userPaused) {
-        visibleVideos.add(video);
-      }
-
-      syncVideoPlayback(video);
-    });
-    syncVideoButton(video, button);
   }
 
   function setupVideoObserver() {
@@ -468,7 +436,6 @@ async function setupCaseStudies() {
       figure.append(frame);
     } else {
       const video = document.createElement("video");
-      const toggle = document.createElement("button");
       video.src = mediaSource(media);
       video.poster = media.poster || "";
       video.loop = media.loop !== false;
@@ -478,10 +445,8 @@ async function setupCaseStudies() {
       video.preload = "metadata";
       video.setAttribute("aria-label", media.alt);
       video.style.aspectRatio = String(ratioValue(media.aspectRatio));
-      toggle.className = "case-video-toggle";
-      toggle.type = "button";
-      bindVideoControl(video, toggle);
-      figure.append(video, toggle);
+      bindMutedVideo(video);
+      figure.append(video);
     }
 
     if (media.caption?.trim()) {
@@ -693,7 +658,7 @@ async function setupCaseStudies() {
 
     const fragment = document.createDocumentFragment();
 
-    projects.forEach((project) => {
+    projects.forEach((project, index) => {
       const item = document.createElement("li");
       const trigger = document.createElement("button");
       const number = document.createElement("span");
@@ -704,6 +669,11 @@ async function setupCaseStudies() {
       const triggerId = `case-study-trigger-${project.slug}`;
       const panelId = `case-study-panel-${project.slug}`;
       item.className = "case-study-project-item";
+      item.style.setProperty("--case-reveal-index", String(index));
+      item.style.setProperty(
+        "--case-reveal-reverse",
+        String(projects.length - index - 1)
+      );
       trigger.className = "case-study-project-link";
       trigger.type = "button";
       trigger.id = triggerId;
@@ -814,7 +784,6 @@ async function setupCaseStudies() {
     caseHeroVideo.defaultMuted = true;
     caseHeroVideo.volume = 0;
     caseHeroVideo.setAttribute("aria-label", project.hero.alt);
-    caseHeroVideo.dataset.userPaused = "false";
     setHeroTime(caseHeroVideo, currentTime);
     renderInformation(project);
     renderGallery(project);
@@ -840,7 +809,7 @@ async function setupCaseStudies() {
   }
 
   buildProjectList();
-  bindVideoControl(caseHeroVideo, caseHeroToggle);
+  bindMutedVideo(caseHeroVideo);
 
   function transformRectToBase(rect, base) {
     const translateX = rect.left - base.left;
@@ -1336,7 +1305,7 @@ async function setupCaseStudies() {
     if (reduceCaseMotion) {
       finalize();
     } else {
-      window.setTimeout(finalize, 760);
+      window.setTimeout(finalize, 1050);
     }
   }
 
@@ -1357,6 +1326,7 @@ async function setupCaseStudies() {
   }
 
   caseStudyClose.addEventListener("click", closeProject);
+  caseStudyEscape.addEventListener("click", closeProject);
   caseStudyBackdrop.addEventListener("click", closeProject);
 
   caseProjectList.addEventListener("click", (event) => {

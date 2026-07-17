@@ -376,19 +376,20 @@ async function setupWorkStage() {
     };
   }
 
-  function requestDirectionalVideo(direction) {
+  function requestDirectionalVideo(direction, source) {
     if (caseStudyActive) {
       return false;
     }
 
     const now = performance.now();
+    const switchGap = source === "gyro" ? 320 : 720;
 
-    if (now - lastDirectionalSwitch < 720) {
+    if (now - lastDirectionalSwitch < switchGap) {
       return false;
     }
 
     lastDirectionalSwitch = now;
-    switchVideo(modeForDirection(direction));
+    switchVideo(source === "gyro" ? "ascending" : modeForDirection(direction));
     return true;
   }
 
@@ -445,9 +446,13 @@ async function setupWorkStage() {
       return;
     }
 
-    directionTracking.active = nextDirection;
+    const switchAccepted = requestDirectionalVideo(nextDirection, source);
+
+    if (switchAccepted) {
+      directionTracking.active = nextDirection;
+    }
+
     resetDirectionCandidate();
-    requestDirectionalVideo(nextDirection);
   }
 
   function resetMotionEdges() {
@@ -487,8 +492,22 @@ async function setupWorkStage() {
     });
 
     if (enteredEdge) {
-      requestDirectionalVideo(directionFromDelta(tiltChange.x, tiltChange.y));
-      resetDirectionTracking("gyro");
+      const switchAccepted = requestDirectionalVideo(
+        directionFromDelta(tiltChange.x, tiltChange.y),
+        "gyro"
+      );
+
+      if (switchAccepted) {
+        resetDirectionTracking("gyro");
+      } else {
+        // Keep an edge eligible for another sample when the short navigation
+        // cooldown prevented this attempt from being accepted.
+        edgeChecks.forEach(({ name, amount }) => {
+          if (amount >= enterThreshold) {
+            motionEdges[name] = false;
+          }
+        });
+      }
     }
 
     return Object.values(motionEdges).some(Boolean);
