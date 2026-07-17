@@ -62,6 +62,7 @@ async function setupCaseStudies() {
   projects.sort((first, second) => first.order - second.order);
 
   const details = new Map();
+  const detailRequests = new Map();
   const visibleVideos = new Set();
   const backgroundRegions = [
     document.querySelector(".site-intro"),
@@ -135,26 +136,89 @@ async function setupCaseStudies() {
       return details.get(slug);
     }
 
+    if (detailRequests.has(slug)) {
+      return detailRequests.get(slug);
+    }
+
     const summary = projectForSlug(slug);
 
     if (!summary) {
       throw new Error(`Unknown project: ${slug}`);
     }
 
-    const projectResponse = await fetch(summary.detailPath);
+    const request = (async () => {
+      const projectResponse = await fetch(summary.detailPath);
 
-    if (!projectResponse.ok) {
-      throw new Error(`Unable to load ${slug}: ${projectResponse.status}`);
+      if (!projectResponse.ok) {
+        throw new Error(`Unable to load ${slug}: ${projectResponse.status}`);
+      }
+
+      const project = await projectResponse.json();
+
+      if (project.slug !== slug) {
+        throw new Error(`Project data mismatch for ${slug}.`);
+      }
+
+      details.set(slug, project);
+      return project;
+    })();
+
+    detailRequests.set(slug, request);
+
+    try {
+      return await request;
+    } finally {
+      if (detailRequests.get(slug) === request) {
+        detailRequests.delete(slug);
+      }
+    }
+  }
+
+  function prefetchProjectData(slug) {
+    if (!projectForSlug(slug)) {
+      return;
     }
 
-    const project = await projectResponse.json();
+    loadProject(slug).catch(() => {
+      // A foreground request can retry if an idle prefetch fails.
+    });
+  }
 
-    if (project.slug !== slug) {
-      throw new Error(`Project data mismatch for ${slug}.`);
+  async function prefetchRemainingProjectData() {
+    const pendingSlugs = projects
+      .map((project) => project.slug)
+      .filter((slug) => !details.has(slug));
+    let nextIndex = 0;
+
+    async function prefetchNext() {
+      while (nextIndex < pendingSlugs.length) {
+        const slug = pendingSlugs[nextIndex];
+        nextIndex += 1;
+
+        try {
+          await loadProject(slug);
+        } catch {
+          // Keep the idle queue moving; foreground loading remains retryable.
+        }
+      }
     }
 
-    details.set(slug, project);
-    return project;
+    const workerCount = Math.min(3, pendingSlugs.length);
+    await Promise.all(
+      Array.from({ length: workerCount }, () => prefetchNext())
+    );
+  }
+
+  function scheduleProjectDataPrefetch() {
+    const prefetch = () => {
+      prefetchRemainingProjectData().catch(() => {});
+    };
+
+    if (typeof window.requestIdleCallback === "function") {
+      window.requestIdleCallback(prefetch, { timeout: 2500 });
+    } else {
+      window.setTimeout(prefetch, 1200);
+    }
   }
 
   function updateMetadata(project = null) {
@@ -913,7 +977,7 @@ async function setupCaseStudies() {
     return animation;
   }
 
-  function revealLayer({ origin = null } = {}) {
+  function prepareLayer({ origin = null } = {}) {
     isOpen = true;
     lastFocusedElement = document.activeElement;
     cancelScrollAnimation();
@@ -928,7 +992,14 @@ async function setupCaseStudies() {
     window.dispatchEvent(new CustomEvent("kozi:casestudystate", {
       detail: { open: true },
     }));
-    requestAnimationFrame(() => caseStudyLayer.classList.add("is-open"));
+  }
+
+  function revealPreparedLayer() {
+    requestAnimationFrame(() => {
+      if (isOpen) {
+        caseStudyLayer.classList.add("is-open");
+      }
+    });
   }
 
   function waitForCaseMotion(duration) {
@@ -1048,6 +1119,23 @@ async function setupCaseStudies() {
     }
   }
 
+  function commitProjectHistory(summary, slug, historyMode) {
+    const state = {
+      koziView: "case",
+      slug,
+      depth: caseHistoryDepth,
+      fromHomepage: openedFromHomepage,
+    };
+
+    if (historyMode === "push") {
+      caseHistoryDepth += 1;
+      state.depth = caseHistoryDepth;
+      history.pushState(state, "", summary.route);
+    } else if (historyMode === "replace") {
+      history.replaceState(state, "", summary.route);
+    }
+  }
+
   async function openProject(
     slug,
     {
@@ -1078,37 +1166,10 @@ async function setupCaseStudies() {
     const token = ++loadToken;
     const replacingProject = Boolean(isOpen && activeSlug && activeSlug !== slug);
 
-    if (!isOpen) {
-      revealLayer({ origin });
-    } else if (replacingProject) {
+    if (replacingProject) {
       isProjectSwitching = true;
       caseStudyLayer.classList.add("is-switching");
       caseStudyDialog.setAttribute("aria-busy", "true");
-    }
-
-    if (historyMode === "push") {
-      caseHistoryDepth += 1;
-      history.pushState(
-        {
-          koziView: "case",
-          slug,
-          depth: caseHistoryDepth,
-          fromHomepage: openedFromHomepage,
-        },
-        "",
-        summary.route
-      );
-    } else if (historyMode === "replace") {
-      history.replaceState(
-        {
-          koziView: "case",
-          slug,
-          depth: caseHistoryDepth,
-          fromHomepage: openedFromHomepage,
-        },
-        "",
-        summary.route
-      );
     }
 
     let project;
@@ -1122,17 +1183,7 @@ async function setupCaseStudies() {
 
       console.error(error);
 
-      if (!replacingProject) {
-        caseStudyTitle.textContent = "Case study unavailable";
-        caseStudySummary.textContent = "This case study could not be loaded.";
-        caseStudySummary.hidden = false;
-        caseStudyInformation.hidden = false;
-        caseServicesSection.hidden = true;
-        caseCreditsSection.hidden = true;
-        caseGallery.hidden = true;
-        caseStudyLayer.classList.remove("is-ghosting");
-        caseStudyDialog.removeAttribute("aria-busy");
-      } else {
+      if (replacingProject) {
         finishProjectSwitch();
       }
 
@@ -1144,6 +1195,10 @@ async function setupCaseStudies() {
       return;
     }
 
+    if (!replacingProject) {
+      prepareLayer({ origin });
+    }
+
     const activeItem = replacingProject
       ? await transitionToProject(project, { currentTime, token })
       : renderProject(project, { currentTime });
@@ -1152,7 +1207,13 @@ async function setupCaseStudies() {
       return;
     }
 
+    commitProjectHistory(summary, slug, historyMode);
     caseStudyDialog.removeAttribute("aria-busy");
+
+    if (!replacingProject) {
+      revealPreparedLayer();
+    }
+
     window.dispatchEvent(new CustomEvent("kozi:requeststageproject", {
       detail: { slug },
     }));
@@ -1355,6 +1416,10 @@ async function setupCaseStudies() {
     });
   });
 
+  window.addEventListener("kozi:projectchange", (event) => {
+    prefetchProjectData(event.detail?.project?.slug || event.detail?.slug);
+  });
+
   window.addEventListener("popstate", (event) => {
     const slug = slugFromLocation();
 
@@ -1405,4 +1470,7 @@ async function setupCaseStudies() {
   } else {
     history.replaceState({ koziView: "home" }, "", window.location.pathname);
   }
+
+  prefetchProjectData(document.querySelector("#work")?.dataset.projectSlug);
+  scheduleProjectDataPrefetch();
 }
