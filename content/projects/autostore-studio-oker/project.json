@@ -3,8 +3,11 @@
   "slug": "autostore-studio-oker",
   "order": 10,
   "title": "Autostore",
-  "wip": true,
-  "summary": "",
+  "wip": false,
+  "summary": "For AutoStore, I created an animation in collaboration with Studio Oker for the company’s Korean and Japanese stock exchange announcements.",
+  "tags": [
+    "Motion"
+  ],
   "services": [],
   "credits": [
     {

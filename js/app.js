@@ -3,6 +3,56 @@ document.documentElement.classList.add("js");
 const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 const hoverCapable = window.matchMedia("(hover: hover) and (pointer: fine)");
 const coarsePointer = window.matchMedia("(pointer: coarse)");
+const deviceDarkTheme = window.matchMedia("(prefers-color-scheme: dark)");
+let themeInverted = false;
+let themeTransitionFrame = 0;
+
+function updateThemeInversion() {
+  window.cancelAnimationFrame(themeTransitionFrame);
+  document.documentElement.classList.add("theme-switching");
+  const effectiveDarkTheme = deviceDarkTheme.matches !== themeInverted;
+  document.documentElement.classList.toggle("theme-inverted", themeInverted);
+  document.documentElement.style.colorScheme = effectiveDarkTheme ? "dark" : "light";
+  document
+    .querySelectorAll('meta[name="theme-color"]')
+    .forEach((meta) => {
+      meta.content = effectiveDarkTheme ? "#0c0c0b" : "#f1f0eb";
+    });
+  themeTransitionFrame = window.requestAnimationFrame(() => {
+    themeTransitionFrame = window.requestAnimationFrame(() => {
+      document.documentElement.classList.remove("theme-switching");
+    });
+  });
+}
+
+function toggleThemeInversion() {
+  themeInverted = !themeInverted;
+  updateThemeInversion();
+}
+
+window.addEventListener("keydown", (event) => {
+  const target = event.target;
+  const isEditable =
+    target instanceof HTMLElement &&
+    (target.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName));
+
+  if (
+    isEditable ||
+    event.repeat ||
+    event.metaKey ||
+    event.ctrlKey ||
+    event.altKey ||
+    event.key.toLocaleLowerCase() !== "i"
+  ) {
+    return;
+  }
+
+  event.preventDefault();
+  toggleThemeInversion();
+});
+
+deviceDarkTheme.addEventListener?.("change", updateThemeInversion);
+updateThemeInversion();
 
 function setupPresenceFavicon() {
   const favicons = Array.from(document.querySelectorAll("[data-presence-favicon]"));
@@ -28,6 +78,76 @@ function setupPresenceFavicon() {
 }
 
 setupPresenceFavicon();
+
+function setupRtmClock() {
+  const clock = document.querySelector("[data-rtm-clock]");
+  const time = clock?.querySelector("[data-rtm-time]");
+  const hour = clock?.querySelector("[data-rtm-hour]");
+  const minute = clock?.querySelector("[data-rtm-minute]");
+  const period = clock?.querySelector("[data-rtm-period]");
+
+  if (!clock || !time || !hour || !minute || !period) {
+    return;
+  }
+
+  const formatter = new Intl.DateTimeFormat("en-GB", {
+    timeZone: "Europe/Amsterdam",
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+  });
+  let clockTimer = 0;
+  let useTwentyFourHour = false;
+
+  function updateClock() {
+    const now = new Date();
+    const parts = Object.fromEntries(
+      formatter
+        .formatToParts(now)
+        .filter((part) => part.type !== "literal")
+        .map((part) => [part.type, part.value])
+    );
+    const twentyFourHour = Number(parts.hour);
+    const displayHour = useTwentyFourHour
+      ? parts.hour
+      : String(twentyFourHour % 12).padStart(2, "0");
+    const displayMinute = parts.minute;
+    const displayPeriod = twentyFourHour < 12 ? "am" : "pm";
+    const accessibleHour = twentyFourHour % 12 || 12;
+
+    hour.textContent = displayHour;
+    minute.textContent = displayMinute;
+    period.textContent = displayPeriod;
+    period.hidden = useTwentyFourHour;
+    time.dateTime = now.toISOString();
+    clock.setAttribute("aria-pressed", String(useTwentyFourHour));
+    clock.setAttribute(
+      "aria-label",
+      useTwentyFourHour
+        ? `Rotterdam time ${parts.hour}:${displayMinute}, switch to 12-hour clock`
+        : `Rotterdam time ${accessibleHour}:${displayMinute} ${displayPeriod.toUpperCase()}, switch to 24-hour clock`
+    );
+
+    window.clearTimeout(clockTimer);
+    clockTimer = window.setTimeout(
+      updateClock,
+      60000 - (now.getSeconds() * 1000 + now.getMilliseconds())
+    );
+  }
+
+  document.addEventListener("visibilitychange", () => {
+    if (!document.hidden) {
+      updateClock();
+    }
+  });
+  clock.addEventListener("click", () => {
+    useTwentyFourHour = !useTwentyFourHour;
+    updateClock();
+  });
+  updateClock();
+}
+
+setupRtmClock();
 
 function setupIntroDisclosure() {
   const intro = document.querySelector(".site-intro");
@@ -169,7 +289,7 @@ if (stage && frame && videos.length === 2 && projectLabel && projectNumber && pr
 }
 
 async function setupWorkStage() {
-  const response = await fetch("./assets/projects/index.json?v=4");
+  const response = await fetch("./assets/projects/index.json?v=5");
 
   if (!response.ok) {
     throw new Error(`Unable to load video manifest: ${response.status}`);
@@ -235,6 +355,11 @@ async function setupWorkStage() {
   let expandedSwipeOffset = { x: 0, y: 0 };
   let suppressClick = false;
   let motionListening = false;
+  let shakeListening = false;
+  let shakeWindowStart = 0;
+  let lastShakePeak = 0;
+  let lastShakeToggle = 0;
+  let shakePeakCount = 0;
   let baseOrientation = null;
   let motionOrigin = null;
   let lastTiltPosition = null;
@@ -1246,22 +1371,93 @@ async function setupWorkStage() {
     }
   }
 
-  async function requestMotionPermission() {
-    const OrientationEvent = window.DeviceOrientationEvent;
-
-    if (!OrientationEvent || typeof OrientationEvent.requestPermission !== "function") {
-      startMotionInput();
+  function handleShake(event) {
+    if (document.hidden) {
       return;
     }
 
-    try {
-      const permission = await OrientationEvent.requestPermission();
+    const directAcceleration = event.acceleration;
+    const includesGravity = event.accelerationIncludingGravity;
+    const acceleration =
+      directAcceleration?.x != null ? directAcceleration : includesGravity;
 
-      if (permission === "granted") {
+    if (acceleration?.x == null || acceleration?.y == null || acceleration?.z == null) {
+      return;
+    }
+
+    const magnitude = Math.hypot(acceleration.x, acceleration.y, acceleration.z);
+    const force = acceleration === directAcceleration
+      ? magnitude
+      : Math.abs(magnitude - 9.81);
+    const now = performance.now();
+
+    if (now - shakeWindowStart > 900) {
+      shakeWindowStart = now;
+      shakePeakCount = 0;
+    }
+
+    if (force < 12 || now - lastShakePeak < 110) {
+      return;
+    }
+
+    lastShakePeak = now;
+    shakePeakCount += 1;
+
+    if (shakePeakCount < 2 || now - lastShakeToggle < 1400) {
+      return;
+    }
+
+    shakePeakCount = 0;
+    lastShakeToggle = now;
+    toggleThemeInversion();
+  }
+
+  function startShakeInput() {
+    if (shakeListening || !coarsePointer.matches) {
+      return;
+    }
+
+    window.addEventListener("devicemotion", handleShake, { passive: true });
+    shakeListening = true;
+
+    if (motionButton) {
+      motionButton.hidden = true;
+    }
+  }
+
+  async function requestMotionPermission() {
+    const OrientationEvent = window.DeviceOrientationEvent;
+    const MotionEvent = window.DeviceMotionEvent;
+
+    try {
+      const orientationRequest =
+        typeof OrientationEvent?.requestPermission === "function"
+          ? OrientationEvent.requestPermission()
+          : Promise.resolve(OrientationEvent ? "granted" : "unavailable");
+      const motionRequest =
+        coarsePointer.matches && typeof MotionEvent?.requestPermission === "function"
+          ? MotionEvent.requestPermission()
+          : Promise.resolve(MotionEvent ? "granted" : "unavailable");
+      const [orientationPermission, motionPermission] = await Promise.all([
+        orientationRequest,
+        motionRequest,
+      ]);
+
+      if (orientationPermission === "granted") {
         startMotionInput();
-      } else if (motionButton) {
+      }
+
+      if (motionPermission === "granted") {
+        startShakeInput();
+      }
+
+      if (
+        orientationPermission !== "granted" &&
+        motionPermission !== "granted" &&
+        motionButton
+      ) {
         motionButton.hidden = true;
-        stageStatus.textContent = "Gyro access declined. Touch drag remains available.";
+        stageStatus.textContent = "Motion access declined. Touch drag remains available.";
       }
     } catch (error) {
       console.error(error);
@@ -1270,7 +1466,7 @@ async function setupWorkStage() {
         motionButton.hidden = true;
       }
 
-      stageStatus.textContent = "Gyro access unavailable. Touch drag remains available.";
+      stageStatus.textContent = "Motion access unavailable. Touch drag remains available.";
     }
   }
 
@@ -1283,13 +1479,23 @@ async function setupWorkStage() {
   }
 
   const OrientationEvent = window.DeviceOrientationEvent;
+  const MotionEvent = window.DeviceMotionEvent;
+  const motionPermissionRequired =
+    typeof OrientationEvent?.requestPermission === "function" ||
+    typeof MotionEvent?.requestPermission === "function";
 
-  if (OrientationEvent && typeof OrientationEvent.requestPermission === "function") {
+  if (motionPermissionRequired) {
     if (motionButton && coarsePointer.matches) {
       motionButton.hidden = false;
     }
-  } else if (OrientationEvent) {
-    startMotionInput();
+  } else {
+    if (OrientationEvent) {
+      startMotionInput();
+    }
+
+    if (MotionEvent) {
+      startShakeInput();
+    }
   }
 
   window.addEventListener("orientationchange", resetMotionCalibration);

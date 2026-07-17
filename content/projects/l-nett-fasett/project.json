@@ -3,12 +3,27 @@
   "slug": "l-nett-fasett",
   "order": 11,
   "title": "L-nett",
-  "wip": true,
-  "summary": "",
+  "wip": false,
+  "summary": "Lnett is the grid company within electricity and energy supplier Lyse, responsible for operating and developing the electricity grid for nearly 160,000 customers. Due to a national regulation requiring grid companies to be separated from activities within power production and electricity sales, the company had to change its name from Lyse Elnett to Lnett.\n\nAlongside the new name, Lnett needed a visual identity that would differentiate it from the Lyse Group and establish an independent presence. Lnett’s mission is to secure, operate and maintain a stable power grid, combined with a strong focus on innovation and development within the energy sector.",
+  "tags": [
+    "Motion",
+    "Code",
+    "Branding",
+    "Tool"
+  ],
   "services": [],
   "credits": [
     {
-      "name": "Fasett"
+      "name": "Fasett",
+      "href": "https://fasett.no/jobber/nytt-navn-og-visuell-identitet-for-lnett"
+    }
+  ],
+  "awards": [
+    {
+      "name": "European Design Awards — Gold",
+      "href": "https://awards.europeandesign.org/winner/256791",
+      "src": "/assets/projects/l-nett-fasett/european-design-awards-2022-gold.png",
+      "alt": "European Design Awards Gold Winner"
     }
   ],
   "hero": {

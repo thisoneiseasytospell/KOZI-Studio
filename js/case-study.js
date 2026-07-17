@@ -13,6 +13,9 @@ const caseStudyInformation = document.querySelector("[data-case-information]");
 const caseServicesSection = document.querySelector("[data-case-services-section]");
 const caseServices = document.querySelector("[data-case-services]");
 const caseCreditsSection = document.querySelector("[data-case-credits-section]");
+const caseRecognition = document.querySelector("[data-case-recognition]");
+const caseAwards = document.querySelector("[data-case-awards]");
+const caseCreditsHeading = document.querySelector("[data-case-credits-heading]");
 const caseCredits = document.querySelector("[data-case-credits]");
 const caseHero = document.querySelector("[data-case-hero]");
 const caseHeroVideo = document.querySelector("[data-case-hero-video]");
@@ -47,7 +50,7 @@ async function setupCaseStudies() {
   const caseScrollDuration = 240;
   const reduceCaseMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   const compactCaseMedia = window.matchMedia("(max-width: 760px), (hover: none), (pointer: coarse)");
-  const response = await fetch("/assets/projects/index.json?v=4");
+  const response = await fetch("/assets/projects/index.json?v=5");
 
   if (!response.ok) {
     throw new Error(`Unable to load project index: ${response.status}`);
@@ -85,9 +88,10 @@ async function setupCaseStudies() {
   let loadToken = 0;
   let lastFocusedElement = null;
   let openedFromHomepage = false;
+  let openedFromWorkIndex = false;
   let caseHistoryDepth = 0;
   let videoObserver = null;
-  const imageCaptionObserver = typeof ResizeObserver === "function"
+  const mediaCaptionObserver = typeof ResizeObserver === "function"
     ? new ResizeObserver((entries) => {
         entries.forEach((entry) => {
           const caption = entry.target.nextElementSibling;
@@ -113,6 +117,10 @@ async function setupCaseStudies() {
   function slugFromLocation() {
     const match = window.location.pathname.match(/^\/work\/([^/]+)\/?$/);
     return match ? decodeURIComponent(match[1]) : null;
+  }
+
+  function isWorkIndexLocation() {
+    return /^\/work\/?$/.test(window.location.pathname);
   }
 
   function mediaSource(media) {
@@ -158,6 +166,11 @@ async function setupCaseStudies() {
 
   function formatProjectNumber(order) {
     return String(order).padStart(2, "0");
+  }
+
+  function caseProjectNumber(project) {
+    const index = projects.findIndex((candidate) => candidate.slug === project.slug);
+    return formatProjectNumber(index >= 0 ? index + 1 : project.order);
   }
 
   async function loadProject(slug) {
@@ -274,6 +287,18 @@ async function setupCaseStudies() {
       "href",
       `https://www.kozi.studio/work/${project.slug}/`
     );
+  }
+
+  function updateWorkMetadata() {
+    const descriptionMeta = document.querySelector('meta[name="description"]');
+    const robotsMeta = document.querySelector('meta[name="robots"]');
+    const canonical = document.querySelector('link[rel="canonical"]');
+    const description = "Selected work by Albert Kozikowski.";
+
+    document.title = "Selected work | KOZI Studio";
+    descriptionMeta?.setAttribute("content", description);
+    robotsMeta?.setAttribute("content", "index, follow, max-image-preview:large");
+    canonical?.setAttribute("href", "https://www.kozi.studio/work/");
   }
 
   function setBackgroundInert(value) {
@@ -426,6 +451,8 @@ async function setupCaseStudies() {
     const summary = project.summary?.trim() || "";
     const services = Array.isArray(project.services) ? project.services : [];
     const credits = Array.isArray(project.credits) ? project.credits : [];
+    const awards = Array.isArray(project.awards) ? project.awards : [];
+    const recognition = Array.isArray(project.recognition) ? project.recognition : [];
 
     renderSummary(project, summary);
     caseStudySummary.hidden = !summary;
@@ -436,6 +463,27 @@ async function setupCaseStudies() {
       caseServices.append(item);
     });
     caseServicesSection.hidden = services.length === 0;
+    renderRecognition(recognition);
+    caseAwards.replaceChildren();
+    caseAwards.hidden = awards.length === 0;
+    awards.forEach((award) => {
+      const item = document.createElement("div");
+      const link = document.createElement("a");
+      const image = document.createElement("img");
+
+      item.className = "case-study-award";
+      link.href = award.href;
+      link.target = "_blank";
+      link.rel = "noopener noreferrer";
+      link.setAttribute("aria-label", `${award.name} (opens in a new tab)`);
+      image.src = award.src;
+      image.alt = award.alt;
+      link.append(image);
+      item.append(link);
+      caseAwards.append(item);
+    });
+    caseCreditsHeading.textContent = project.creditsHeading?.trim() || "Credits";
+    caseCreditsHeading.hidden = credits.length === 0;
     caseCredits.replaceChildren();
     credits.forEach((credit) => {
       const role = document.createElement("dt");
@@ -461,8 +509,15 @@ async function setupCaseStudies() {
       caseCredits.append(role, name);
     });
     caseCreditsSection.classList.toggle("is-compact", credits.length > 4);
-    caseCreditsSection.hidden = credits.length === 0;
-    caseStudyInformation.hidden = !summary && services.length === 0 && credits.length === 0;
+    caseCreditsSection.classList.toggle("has-awards", awards.length > 0);
+    caseCreditsSection.hidden =
+      credits.length === 0 && awards.length === 0 && recognition.length === 0;
+    caseStudyInformation.hidden =
+      !summary &&
+      services.length === 0 &&
+      credits.length === 0 &&
+      awards.length === 0 &&
+      recognition.length === 0;
   }
 
   function renderSummary(project, summary) {
@@ -474,6 +529,7 @@ async function setupCaseStudies() {
 
     if (!summary || glossary.length === 0) {
       caseStudySummary.textContent = summary;
+      appendSummaryLink(project);
       return;
     }
 
@@ -521,7 +577,64 @@ async function setupCaseStudies() {
     }
 
     caseStudySummary.append(document.createTextNode(summary.slice(sourceIndex)));
+    appendSummaryLink(project);
     requestAnimationFrame(positionTermTooltips);
+  }
+
+  function appendSummaryLink(project) {
+    const summaryLink = project.summaryLink;
+
+    if (!summaryLink?.label?.trim() || !summaryLink?.href?.trim()) {
+      return;
+    }
+
+    const wrapper = document.createElement("span");
+    const link = document.createElement("a");
+    wrapper.className = "case-study-summary-link";
+    link.href = summaryLink.href;
+    link.target = "_blank";
+    link.rel = "noopener noreferrer";
+    link.append(summaryLink.label.trim(), " ↗");
+    link.setAttribute(
+      "aria-label",
+      `${summaryLink.label.trim()} (opens in a new tab)`
+    );
+    wrapper.append(link);
+    caseStudySummary.append(wrapper);
+  }
+
+  function renderRecognition(recognition) {
+    caseRecognition.replaceChildren();
+    caseRecognition.hidden = recognition.length === 0;
+
+    if (recognition.length === 0) {
+      return;
+    }
+
+    const heading = document.createElement("p");
+    heading.className = "case-study-recognition-heading";
+    heading.textContent = "Recognition";
+    caseRecognition.append(heading);
+
+    recognition.forEach((item) => {
+      const link = document.createElement("a");
+      link.className = `case-study-recognition-banner case-study-recognition-banner--${item.variant}`;
+      link.href = item.href;
+      link.target = "_blank";
+      link.rel = "noopener noreferrer";
+      link.setAttribute("aria-label", `${item.name} (opens in a new tab)`);
+
+      if (item.variant === "behance") {
+        const mark = document.createElement("span");
+        mark.className = "case-study-recognition-mark";
+        mark.textContent = "Bē";
+        link.append(mark);
+      } else {
+        link.textContent = item.name;
+      }
+
+      caseRecognition.append(link);
+    });
   }
 
   function positionTermTooltip(trigger, tooltip) {
@@ -574,12 +687,12 @@ async function setupCaseStudies() {
 
   function createMediaFigure(media) {
     const figure = document.createElement("figure");
-    let imageElement = null;
+    let captionMediaElement = null;
     figure.className = "case-study-media";
 
     if (media.type === "image") {
       const image = document.createElement("img");
-      imageElement = image;
+      captionMediaElement = image;
       figure.classList.add("case-study-media--image");
       image.src = mediaSource(media);
       image.alt = media.alt;
@@ -643,6 +756,13 @@ async function setupCaseStudies() {
       figure.append(frame);
     } else {
       const video = document.createElement("video");
+      captionMediaElement = video;
+      figure.classList.add("case-study-media--video");
+
+      if (Math.abs(ratioValue(media.aspectRatio) - 1) < 0.01) {
+        figure.classList.add("case-study-media--square");
+      }
+
       const autoplay = media.autoplay !== false;
       const muted = media.muted !== false;
       video.src = mediaSource(media);
@@ -688,15 +808,19 @@ async function setupCaseStudies() {
 
       figure.append(caption);
 
-      if (imageElement) {
-        if (imageCaptionObserver) {
-          imageCaptionObserver.observe(imageElement);
+      if (captionMediaElement) {
+        if (mediaCaptionObserver) {
+          mediaCaptionObserver.observe(captionMediaElement);
         } else {
           const syncCaptionWidth = () => {
-            caption.style.width = `${imageElement.getBoundingClientRect().width}px`;
+            caption.style.width = `${captionMediaElement.getBoundingClientRect().width}px`;
           };
 
-          imageElement.addEventListener("load", syncCaptionWidth, { once: true });
+          captionMediaElement.addEventListener(
+            media.type === "image" ? "load" : "loadedmetadata",
+            syncCaptionWidth,
+            { once: true }
+          );
         }
       }
     }
@@ -705,8 +829,16 @@ async function setupCaseStudies() {
   }
 
   function renderGallery(project) {
-    imageCaptionObserver?.disconnect();
+    mediaCaptionObserver?.disconnect();
     caseGallery.replaceChildren();
+    caseStudyContent.classList.toggle(
+      "case-study-content--uniform-gallery",
+      project.slug === "3d-research"
+    );
+    caseGallery.classList.toggle(
+      "case-study-gallery--uniform",
+      project.slug === "3d-research"
+    );
     const viewport = compactCaseMedia.matches ? "mobile" : "desktop";
     const media = Array.isArray(project.media)
       ? project.media.filter((item) => !item.showOn || item.showOn === "all" || item.showOn === viewport)
@@ -931,7 +1063,7 @@ async function setupCaseStudies() {
       trigger.setAttribute("aria-controls", panelId);
       trigger.setAttribute("aria-expanded", "false");
       number.className = "case-study-project-number";
-      number.textContent = formatProjectNumber(project.order);
+      number.textContent = formatProjectNumber(index + 1);
       title.className = "case-study-project-title";
       title.textContent = project.title;
       tags.className = "case-study-project-tags";
@@ -1021,9 +1153,10 @@ async function setupCaseStudies() {
     project,
     { currentTime = 0, expanded = true, useOriginVideo = false } = {}
   ) {
+    caseStudyContent.hidden = false;
     activeProject = project;
     activeSlug = project.slug;
-    const number = formatProjectNumber(project.order);
+    const number = caseProjectNumber(project);
     caseHeadingNumber.textContent = number;
     caseStudyTitle.textContent = project.title;
     caseHeroCaption.textContent = project.hero.caption?.trim() || "";
@@ -1558,6 +1691,7 @@ async function setupCaseStudies() {
       slug,
       depth: caseHistoryDepth,
       fromHomepage: openedFromHomepage,
+      fromWorkIndex: openedFromWorkIndex,
     };
 
     if (historyMode === "push") {
@@ -1566,6 +1700,44 @@ async function setupCaseStudies() {
       history.pushState(state, "", summary.route);
     } else if (historyMode === "replace") {
       history.replaceState(state, "", summary.route);
+    }
+  }
+
+  function openWorkIndex({ direct = false } = {}) {
+    const alreadyOpen = isOpen;
+
+    if (!alreadyOpen) {
+      prepareLayer();
+    }
+
+    ++loadToken;
+    isProjectSwitching = false;
+    queuedProjectRequest = null;
+    activeProject = null;
+    activeSlug = null;
+    openedFromHomepage = false;
+    openedFromWorkIndex = true;
+    caseHistoryDepth = 0;
+    pauseAllCaseVideos();
+    videoObserver?.disconnect();
+    visibleVideos.clear();
+    caseStudyContent.hidden = true;
+    setCurrentAccordionItem(null);
+    caseProjectList
+      .querySelectorAll(".case-study-project-item")
+      .forEach((item) => setAccordionExpanded(item, false));
+    caseStudyDialog.removeAttribute("aria-labelledby");
+    caseStudyDialog.setAttribute("aria-label", "Selected work");
+    caseStudyDialog.removeAttribute("aria-busy");
+    caseStudyLayer.classList.remove("is-switching", "is-ghosting");
+    updateWorkMetadata();
+
+    if (!alreadyOpen) {
+      revealPreparedLayer();
+    }
+
+    if (direct) {
+      caseStudyClose.focus({ preventScroll: true });
     }
   }
 
@@ -1598,6 +1770,7 @@ async function setupCaseStudies() {
 
     const token = ++loadToken;
     const replacingProject = Boolean(isOpen && activeSlug && activeSlug !== slug);
+    const openingFromWorkIndex = Boolean(isOpen && !activeSlug && openedFromWorkIndex);
 
     if (replacingProject) {
       isProjectSwitching = true;
@@ -1630,8 +1803,10 @@ async function setupCaseStudies() {
 
     const useOriginVideo = !replacingProject && canBorrowOriginVideo(project, origin);
 
-    if (!replacingProject) {
+    if (!replacingProject && !openingFromWorkIndex) {
       prepareLayer({ origin, preserveStageVideo: useOriginVideo });
+    } else if (openingFromWorkIndex) {
+      caseStudyDialog.setAttribute("aria-busy", "true");
     }
 
     const activeItem = replacingProject
@@ -1645,7 +1820,7 @@ async function setupCaseStudies() {
     commitProjectHistory(summary, slug, historyMode);
     caseStudyDialog.removeAttribute("aria-busy");
 
-    if (!replacingProject) {
+    if (!replacingProject && !openingFromWorkIndex) {
       revealPreparedLayer();
     }
 
@@ -1737,6 +1912,7 @@ async function setupCaseStudies() {
       caseStudyLayer.classList.remove("is-closing", "is-ghosting");
       activeSlug = null;
       activeProject = null;
+      openedFromWorkIndex = false;
 
       if (restoreFocus && lastFocusedElement?.isConnected) {
         lastFocusedElement.focus({ preventScroll: true });
@@ -1759,6 +1935,11 @@ async function setupCaseStudies() {
 
     if (openedFromHomepage && caseHistoryDepth > 0) {
       closeAfterHistoryChange = true;
+      history.go(-caseHistoryDepth);
+      return;
+    }
+
+    if (openedFromWorkIndex && caseHistoryDepth > 0) {
       history.go(-caseHistoryDepth);
       return;
     }
@@ -1854,6 +2035,7 @@ async function setupCaseStudies() {
     }
 
     openedFromHomepage = true;
+    openedFromWorkIndex = false;
     caseHistoryDepth = 0;
     openProject(slug, {
       origin: event.detail,
@@ -1876,6 +2058,11 @@ async function setupCaseStudies() {
       return;
     }
 
+    if (isWorkIndexLocation()) {
+      openWorkIndex();
+      return;
+    }
+
     if (!slug) {
       caseHistoryDepth = 0;
       finishClose();
@@ -1885,6 +2072,7 @@ async function setupCaseStudies() {
     const state = event.state || {};
     caseHistoryDepth = Number(state.depth) || 0;
     openedFromHomepage = Boolean(state.fromHomepage);
+    openedFromWorkIndex = Boolean(state.fromWorkIndex);
     openProject(slug, { historyMode: "none", direct: !isOpen });
   });
 
@@ -1898,10 +2086,16 @@ async function setupCaseStudies() {
   });
   window.visualViewport?.addEventListener("resize", positionTermTooltips);
 
+  const initialWorkIndex =
+    document.body.dataset.initialView === "work" || isWorkIndexLocation();
   const initialSlug = document.body.dataset.initialProject || slugFromLocation();
 
-  if (initialSlug && projectForSlug(initialSlug)) {
+  if (initialWorkIndex) {
+    history.replaceState({ koziView: "work" }, "", "/work/");
+    openWorkIndex({ direct: true });
+  } else if (initialSlug && projectForSlug(initialSlug)) {
     openedFromHomepage = false;
+    openedFromWorkIndex = false;
     caseHistoryDepth = 0;
     history.replaceState(
       {
@@ -1909,6 +2103,7 @@ async function setupCaseStudies() {
         slug: initialSlug,
         depth: 0,
         fromHomepage: false,
+        fromWorkIndex: false,
       },
       "",
       projectForSlug(initialSlug).route

@@ -16,8 +16,10 @@
 
 :root {
   --bg: #f1f0eb;
+  --bg-rgb: 241 240 235;
   --intro-bg: #f1f0eb;
   --text: #050505;
+  --text-rgb: 5 5 5;
   --intro-text: var(--text);
   --muted: var(--text);
   --surface: #050505;
@@ -28,6 +30,41 @@
   --intro-expand-duration: 760ms;
   --intro-collapse-duration: 1080ms;
   --intro-collapse-ease: cubic-bezier(0.65, 0, 0.35, 1);
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0c0c0b;
+    --bg-rgb: 12 12 11;
+    --intro-bg: #0c0c0b;
+    --text: #f1f0eb;
+    --text-rgb: 241 240 235;
+    --surface: #f1f0eb;
+    color-scheme: dark;
+  }
+
+  :root.theme-inverted {
+    --bg: #f1f0eb;
+    --bg-rgb: 241 240 235;
+    --intro-bg: #f1f0eb;
+    --text: #050505;
+    --text-rgb: 5 5 5;
+    --surface: #050505;
+    color-scheme: light;
+  }
+}
+
+@media (prefers-color-scheme: light) {
+  :root.theme-inverted {
+    --bg: #0c0c0b;
+    --bg-rgb: 12 12 11;
+    --intro-bg: #0c0c0b;
+    --text: #f1f0eb;
+    --text-rgb: 241 240 235;
+    --surface: #f1f0eb;
+    color-scheme: dark;
+  }
 }
 
 * {
@@ -60,6 +97,11 @@ body {
   overflow: hidden;
   text-rendering: geometricPrecision;
   word-spacing: -0.05em;
+}
+
+.theme-switching,
+.theme-switching * {
+  transition: none !important;
 }
 
 a {
@@ -126,7 +168,7 @@ dd {
 .intro-shell {
   -webkit-backdrop-filter: blur(8px);
   backdrop-filter: blur(8px);
-  background: rgba(241, 240, 235, 0.58);
+  background: rgb(var(--bg-rgb) / 0.58);
   border-radius: 0 0 24px 0;
   max-width: 100vw;
   overflow: hidden;
@@ -330,6 +372,68 @@ dd {
   transform: translateY(0);
 }
 
+.rtm-clock {
+  background: transparent;
+  border: 0;
+  color: var(--text);
+  cursor: pointer;
+  font: inherit;
+  font-variant-numeric: tabular-nums;
+  line-height: inherit;
+  opacity: 0;
+  padding: 0;
+  pointer-events: none;
+  position: fixed;
+  right: var(--page-pad);
+  top: var(--page-pad);
+  transform: translateY(-4px);
+  transition:
+    opacity 220ms linear,
+    transform 480ms var(--reveal-ease),
+    visibility 0s linear 480ms;
+  visibility: hidden;
+  white-space: nowrap;
+  word-spacing: 0;
+  z-index: 12;
+}
+
+.site-intro.is-expanded .rtm-clock {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
+  transition:
+    opacity 220ms linear 120ms,
+    transform 480ms var(--reveal-ease) 120ms,
+    visibility 0s linear;
+  visibility: visible;
+}
+
+.rtm-clock:focus-visible {
+  outline: 1px solid currentColor;
+  outline-offset: 3px;
+}
+
+.rtm-clock-location {
+  margin-right: 8px;
+}
+
+.rtm-clock-colon {
+  animation: rtm-clock-blink 1s steps(1, end) infinite;
+  display: inline-block;
+}
+
+@keyframes rtm-clock-blink {
+  0%,
+  49% {
+    opacity: 1;
+  }
+
+  50%,
+  100% {
+    opacity: 0;
+  }
+}
+
 main {
   inset: 0;
   min-height: 0;
@@ -418,7 +522,7 @@ main {
 .project-label {
   -webkit-backdrop-filter: blur(6px);
   backdrop-filter: blur(6px);
-  background: rgba(241, 240, 235, 0.62);
+  background: rgb(var(--bg-rgb) / 0.62);
   border-radius: 4px;
   color: var(--text);
   left: 0;
@@ -455,7 +559,7 @@ main {
 .video-loading {
   -webkit-backdrop-filter: blur(6px);
   backdrop-filter: blur(6px);
-  background: rgba(241, 240, 235, 0.72);
+  background: rgb(var(--bg-rgb) / 0.72);
   border-radius: 999px;
   color: var(--text);
   left: 50%;
@@ -596,6 +700,15 @@ main {
     transition-duration: 0.01ms;
   }
 
+  .rtm-clock {
+    transition-duration: 0.01ms;
+    transition-delay: 0ms;
+  }
+
+  .rtm-clock-colon {
+    animation: none;
+  }
+
   .detail-reveal {
     filter: none;
     transition-duration: 0.01ms;
@@ -636,7 +749,7 @@ main {
 .case-study-backdrop {
   -webkit-backdrop-filter: blur(0) saturate(1);
   backdrop-filter: blur(0) saturate(1);
-  background: rgba(241, 240, 235, 0);
+  background: rgb(var(--bg-rgb) / 0);
   cursor: zoom-out;
   inset: 0;
   opacity: 0;
@@ -649,7 +762,7 @@ main {
 }
 
 .case-study-dialog {
-  background: transparent;
+  background: var(--bg);
   border: 0;
   border-radius: 0;
   box-shadow: none;
@@ -673,7 +786,7 @@ main {
 .case-study-layer.is-open .case-study-backdrop {
   -webkit-backdrop-filter: blur(34px) saturate(0.42);
   backdrop-filter: blur(34px) saturate(0.42);
-  background: rgba(241, 240, 235, 0.82);
+  background: rgb(var(--bg-rgb) / 0.82);
   opacity: 1;
 }
 
@@ -705,7 +818,7 @@ main {
 .case-study-escape {
   background: transparent;
   border: 0;
-  color: rgba(5, 5, 5, 0.52);
+  color: rgb(var(--text-rgb) / 0.52);
   cursor: pointer;
   display: grid;
   line-height: 1;
@@ -777,7 +890,7 @@ main {
   overflow-x: hidden;
   overflow-y: auto;
   overscroll-behavior: contain;
-  scrollbar-color: rgba(5, 5, 5, 0.24) transparent;
+  scrollbar-color: rgb(var(--text-rgb) / 0.24) transparent;
   scrollbar-width: thin;
 }
 
@@ -876,6 +989,15 @@ main {
   word-spacing: inherit;
 }
 
+.case-study-summary-link {
+  display: block;
+  margin-top: 12px;
+}
+
+.case-study-summary-link a {
+  color: inherit;
+}
+
 .case-study-term {
   display: inline;
   position: relative;
@@ -904,11 +1026,11 @@ main {
 
 .case-study-term-tooltip {
   --case-tooltip-shift-x: 0px;
-  background: #050505;
+  background: var(--text);
   border-radius: 6px;
   bottom: calc(100% + 8px);
   box-sizing: border-box;
-  color: #fff;
+  color: var(--bg);
   left: 50%;
   line-height: 1.2;
   opacity: 0;
@@ -944,10 +1066,56 @@ main {
   grid-column: 11 / span 2;
 }
 
+.case-study-credits.has-awards {
+  grid-column: 9 / span 4;
+}
+
 .case-study-services h3,
 .case-study-credits h3 {
-  color: rgba(5, 5, 5, 0.52);
+  color: rgb(var(--text-rgb) / 0.52);
   margin-bottom: 12px;
+}
+
+.case-study-recognition {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 20px;
+  width: max-content;
+}
+
+.case-study-recognition[hidden] {
+  display: none;
+}
+
+.case-study-recognition-heading {
+  color: rgb(var(--text-rgb) / 0.52);
+}
+
+.case-study-recognition-banner {
+  color: #fff;
+  text-decoration: none;
+}
+
+.case-study-recognition-banner:hover,
+.case-study-recognition-banner:focus-visible {
+  text-decoration: none;
+}
+
+.case-study-recognition-banner--behance {
+  align-content: start;
+  background: #1769ff;
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 84%, 0 100%);
+  display: grid;
+  height: 54px;
+  justify-items: center;
+  padding: 8px 3px 14px;
+  width: 32px;
+}
+
+.case-study-recognition-mark {
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: -0.04em;
 }
 
 .case-study-services ul {
@@ -983,6 +1151,41 @@ main {
   margin-bottom: 6px;
 }
 
+.case-study-awards {
+  align-self: start;
+  margin-bottom: 20px;
+  margin-top: 0;
+}
+
+.case-study-awards[hidden] {
+  display: none;
+}
+
+.case-study-award a {
+  display: block;
+  max-width: 100%;
+  width: max-content;
+}
+
+.case-study-award img {
+  display: block;
+  height: auto;
+  max-width: 100%;
+  width: 240px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not(.theme-inverted) .case-study-award img {
+    filter: invert(1);
+  }
+}
+
+@media (prefers-color-scheme: light) {
+  :root.theme-inverted .case-study-award img {
+    filter: invert(1);
+  }
+}
+
 .case-study-credits a,
 .case-study-caption-link {
   color: inherit;
@@ -993,7 +1196,7 @@ main {
 .case-study-credits a:focus-visible,
 .case-study-caption-link:hover,
 .case-study-caption-link:focus-visible {
-  color: #050505;
+  color: var(--text);
 }
 
 .case-study-credits a:focus-visible,
@@ -1008,6 +1211,14 @@ main {
   padding: var(--case-pad) 0 clamp(64px, 10vw, 144px);
 }
 
+.case-study-gallery--uniform {
+  gap: clamp(32px, 6vw, 88px);
+}
+
+.case-study-content--uniform-gallery .case-study-gallery {
+  padding-top: clamp(32px, 6vw, 88px);
+}
+
 .case-study-media {
   margin: 0;
   position: relative;
@@ -1015,7 +1226,7 @@ main {
 
 .case-study-media img,
 .case-study-media video {
-  background: rgba(5, 5, 5, 0.08);
+  background: rgb(var(--text-rgb) / 0.08);
   border-radius: 10px;
   display: block;
   height: auto;
@@ -1028,7 +1239,11 @@ main {
   -webkit-clip-path: inset(0.5px round 9.5px);
   background: transparent;
   clip-path: inset(0.5px round 9.5px);
+  margin-left: auto;
+  margin-right: auto;
+  max-width: 100%;
   transform: translateZ(0);
+  width: auto;
 }
 
 .case-study-media img {
@@ -1040,14 +1255,29 @@ main {
   width: auto;
 }
 
-.case-study-media--image figcaption {
+.case-study-media--image figcaption,
+.case-study-media--video figcaption {
   margin: 0 auto;
-  max-width: min(86%, 520px);
   text-align: left;
+}
+
+.case-study-media--image figcaption {
+  max-width: min(86%, 520px);
 }
 
 .case-study-media + .case-study-media video {
   margin-top: clamp(32px, 6vw, 88px);
+}
+
+.case-study-gallery--uniform .case-study-media + .case-study-media video {
+  margin-top: 0;
+}
+
+@media (min-width: 761px) and (hover: hover) and (pointer: fine) {
+  .case-study-gallery--uniform .case-study-media--square video {
+    max-height: min(68svh, 640px);
+    max-width: min(68vw, 640px);
+  }
 }
 
 .case-study-media iframe {
@@ -1118,13 +1348,13 @@ main {
 }
 
 .case-study-media figcaption {
-  color: rgba(5, 5, 5, 0.62);
+  color: rgb(var(--text-rgb) / 0.62);
   padding-top: 4px;
   text-align: left;
 }
 
 .case-study-hero-caption {
-  color: rgba(5, 5, 5, 0.62);
+  color: rgb(var(--text-rgb) / 0.62);
   margin: 0 auto;
   padding-top: 4px;
   text-align: left;
@@ -1135,11 +1365,9 @@ main {
 }
 
 .case-study-projects-label {
-  -webkit-backdrop-filter: blur(12px);
   align-items: center;
-  backdrop-filter: blur(12px);
-  background: rgba(241, 240, 235, 0.94);
-  color: rgba(5, 5, 5, 0.52);
+  background: var(--bg);
+  color: rgb(var(--text-rgb) / 0.52);
   display: flex;
   margin:
     calc(-1 * var(--case-inset))
@@ -1164,7 +1392,7 @@ main {
   align-items: center;
   background: transparent;
   border: 0;
-  border-top: 1px solid rgba(5, 5, 5, 0.12);
+  border-top: 1px solid rgb(var(--text-rgb) / 0.12);
   color: inherit;
   cursor: pointer;
   display: grid;
@@ -1346,7 +1574,7 @@ main {
 .case-study-transition-ghost {
   background: transparent;
   border-radius: 0;
-  box-shadow: 0 12px 48px rgba(5, 5, 5, 0.14);
+  box-shadow: 0 12px 48px rgb(var(--text-rgb) / 0.14);
   inset: auto;
   overflow: hidden;
   pointer-events: none;
@@ -1393,7 +1621,7 @@ main {
   }
 
   .case-study-layer.is-open .case-study-backdrop {
-    background: rgba(241, 240, 235, 0.9);
+    background: rgb(var(--bg-rgb) / 0.9);
   }
 
   .case-study-dialog {
@@ -1449,6 +1677,10 @@ main {
     grid-column: auto;
   }
 
+  .case-study-credits.has-awards {
+    grid-column: auto;
+  }
+
   .case-study-credits.is-compact dl {
     column-gap: 10px;
     grid-template-columns: minmax(105px, 0.8fr) minmax(0, 1.5fr);
@@ -1478,7 +1710,8 @@ main {
     clip-path: inset(0.5px);
   }
 
-  .case-study-media--image figcaption {
+  .case-study-media--image figcaption,
+  .case-study-media--video figcaption {
     margin: 0;
     max-width: 100%;
   }
@@ -1538,6 +1771,10 @@ main {
 
   .case-study-services,
   .case-study-credits {
+    grid-column: 1;
+  }
+
+  .case-study-credits.has-awards {
     grid-column: 1;
   }
 

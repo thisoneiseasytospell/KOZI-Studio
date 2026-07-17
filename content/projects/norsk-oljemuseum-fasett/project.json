@@ -3,12 +3,17 @@
   "slug": "norsk-oljemuseum-fasett",
   "order": 9,
   "title": "Norsk Oljemuseum",
-  "wip": true,
-  "summary": "",
+  "wip": false,
+  "summary": "KUTT! (English: Cut) is a national touring exhibition that began at the Norwegian Oil Museum in Stavanger, Norway.\n\nThe oil and gas industry is constantly working on developing new solutions and technologies to help mitigate global warming. But what new solutions are actually available on the Norwegian continental shelf, and how do they work? This was something the Norwegian Oil Museum wanted to focus on in its new exhibition.\n\nI was tasked with creating visualisations for the Carbon Capture and Hydrogen parts of the exhibition. I also contributed other motion design throughout the exhibition.",
+  "tags": [
+    "3D",
+    "Motion"
+  ],
   "services": [],
   "credits": [
     {
-      "name": "Fasett"
+      "name": "Fasett",
+      "href": "https://fasett.no/jobber/ny-utstilling-for-oljemuseet"
     }
   ],
   "hero": {
@@ -17,5 +22,29 @@
     "alt": "Motion design for Norsk Oljemuseum with Fasett",
     "aspectRatio": "16 / 9"
   },
-  "media": []
+  "media": [
+    {
+      "type": "video",
+      "desktopSrc": "/assets/projects/norsk-oljemuseum-fasett/03-carbon-capture-animation.mp4",
+      "mobileSrc": "/assets/projects/norsk-oljemuseum-fasett/03-carbon-capture-animation.mp4",
+      "alt": "Carbon capture visualization created for the KUTT exhibition",
+      "aspectRatio": "1 / 1",
+      "caption": "Credit: Fasett",
+      "captionHref": "https://fasett.no/jobber/ny-utstilling-for-oljemuseet"
+    },
+    {
+      "type": "image",
+      "src": "/assets/projects/norsk-oljemuseum-fasett/02-kutt-exhibition-entrance.webp",
+      "alt": "KUTT exhibition graphics seen through the museum entrance",
+      "caption": "Credit: Fasett",
+      "captionHref": "https://fasett.no/jobber/ny-utstilling-for-oljemuseet"
+    },
+    {
+      "type": "image",
+      "src": "/assets/projects/norsk-oljemuseum-fasett/01-kutt-exhibition-wide.webp",
+      "alt": "KUTT exhibition display at the Norwegian Oil Museum",
+      "caption": "Credit: Fasett",
+      "captionHref": "https://fasett.no/jobber/ny-utstilling-for-oljemuseet"
+    }
+  ]
 }

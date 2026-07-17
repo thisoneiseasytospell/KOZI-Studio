@@ -28,7 +28,8 @@
 
 At the centre of the identity was a custom research and asset-generation tool I developed, allowing flags to be explored, composed and exported as both scalable vectors and MP4 animations. The tool connected experimentation with production, creating a flexible visual system that could shift between screen, print and physical space.">
     <meta name="robots" content="noindex, follow, max-image-preview:large">
-    <meta name="theme-color" content="#f1f0eb">
+    <meta name="theme-color" content="#f1f0eb" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#0c0c0b" media="(prefers-color-scheme: dark)">
     <link rel="canonical" href="https://www.kozi.studio/work/wdka-graduation-show/">
 
     <meta property="og:locale" content="en_US">
@@ -79,9 +80,9 @@ At the centre of the identity was a custom research and asset-generation tool I 
     >
     <link rel="apple-touch-icon" href="./apple-touch-icon.png">
     <link rel="preload" href="./assets/fonts/ABCDiatype-Regular.otf" as="font" type="font/otf" crossorigin>
-    <link rel="stylesheet" href="./css/style.css?v=77">
-    <script src="./js/app.js?v=47" defer></script>
-    <script src="./js/case-study.js?v=33" defer></script>
+    <link rel="stylesheet" href="./css/style.css?v=88">
+    <script src="./js/app.js?v=51" defer></script>
+    <script src="./js/case-study.js?v=48" defer></script>
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",
@@ -159,6 +160,9 @@ At the centre of the identity was a custom research and asset-generation tool I 
         </div>
       </div>
       <p class="copyright">&copy;2026</p>
+      <button class="rtm-clock" type="button" data-rtm-clock aria-pressed="false">
+        <span class="rtm-clock-location">Rotterdam, NL</span><time data-rtm-time><span data-rtm-hour>00</span><span class="rtm-clock-colon">:</span><span data-rtm-minute>00</span><span data-rtm-period>am</span></time>
+      </button>
     </header>
 
     <main>
@@ -176,7 +180,7 @@ At the centre of the identity was a custom research and asset-generation tool I 
         </p>
 
         <p class="video-loading" data-video-loading role="status">Loading&hellip;</p>
-        <button class="motion-permission" type="button" hidden>Enable gyro</button>
+        <button class="motion-permission" type="button" hidden>Enable motion</button>
         <p class="visually-hidden" data-stage-status aria-live="polite"></p>
       </section>
     </main>
@@ -244,7 +248,9 @@ At the centre of the identity was a custom research and asset-generation tool I 
                 </section>
 
                 <section class="case-study-credits" data-case-credits-section hidden>
-                  <h3>Credits</h3>
+                  <div class="case-study-recognition" data-case-recognition hidden></div>
+                  <div class="case-study-awards" data-case-awards hidden></div>
+                  <h3 data-case-credits-heading>Credits</h3>
                   <dl data-case-credits></dl>
                 </section>
               </div>

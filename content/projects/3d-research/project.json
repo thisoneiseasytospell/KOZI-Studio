@@ -1,0 +1,72 @@
+{
+  "schemaVersion": 1,
+  "slug": "3d-research",
+  "order": 6,
+  "title": "3D Research",
+  "wip": false,
+  "summary": "",
+  "tags": [
+    "3D",
+    "Motion"
+  ],
+  "services": [],
+  "credits": [],
+  "hero": {
+    "desktopSrc": "/assets/videos/optimized/06-ofart-1440-v1-1b1b809449.mp4",
+    "mobileSrc": "/assets/videos/optimized/06-ofart-960-v1-1b1b809449.mp4",
+    "alt": "Procedural Houdini motion research",
+    "aspectRatio": "16 / 9"
+  },
+  "media": [
+    {
+      "type": "video",
+      "desktopSrc": "/assets/videos/optimized/08-o-tv-cut-1440-v1-fca0aa810b.mp4",
+      "mobileSrc": "/assets/videos/optimized/08-o-tv-cut-960-v1-fca0aa810b.mp4",
+      "alt": "Cinema4D motion research",
+      "aspectRatio": "16 / 9",
+      "caption": ""
+    },
+    {
+      "type": "video",
+      "desktopSrc": "/assets/projects/3d-research/canada-goose-1440.mp4",
+      "mobileSrc": "/assets/projects/3d-research/canada-goose-960.mp4",
+      "alt": "Canada Goose 3D motion research",
+      "aspectRatio": "16 / 9"
+    },
+    {
+      "type": "video",
+      "desktopSrc": "/assets/projects/3d-research/ege-2d-to-3d-1440.mp4",
+      "mobileSrc": "/assets/projects/3d-research/ege-2d-to-3d-960.mp4",
+      "alt": "Ege transition from two-dimensional graphics to an isometric 3D scene",
+      "aspectRatio": "16 / 9"
+    },
+    {
+      "type": "video",
+      "desktopSrc": "/assets/projects/3d-research/jar-1440.mp4",
+      "mobileSrc": "/assets/projects/3d-research/jar-960.mp4",
+      "alt": "Looping 3D jar study",
+      "aspectRatio": "1 / 1"
+    },
+    {
+      "type": "video",
+      "desktopSrc": "/assets/projects/3d-research/jordan-montage-1440.mp4",
+      "mobileSrc": "/assets/projects/3d-research/jordan-montage-960.mp4",
+      "alt": "Jordan 3D motion montage",
+      "aspectRatio": "16 / 9"
+    },
+    {
+      "type": "video",
+      "desktopSrc": "/assets/projects/3d-research/planets-1440.mp4",
+      "mobileSrc": "/assets/projects/3d-research/planets-960.mp4",
+      "alt": "Looping 3D planets study",
+      "aspectRatio": "1 / 1"
+    },
+    {
+      "type": "video",
+      "desktopSrc": "/assets/projects/3d-research/viz3-1440.mp4",
+      "mobileSrc": "/assets/projects/3d-research/viz3-960.mp4",
+      "alt": "Abstract 3D visualization study",
+      "aspectRatio": "1 / 1"
+    }
+  ]
+}
