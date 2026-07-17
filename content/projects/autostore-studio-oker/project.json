@@ -2,11 +2,15 @@
   "schemaVersion": 1,
   "slug": "autostore-studio-oker",
   "order": 10,
-  "title": "Autostore / Studio Oker",
+  "title": "Autostore",
   "wip": true,
   "summary": "",
   "services": [],
-  "credits": [],
+  "credits": [
+    {
+      "name": "Studio Oker"
+    }
+  ],
   "hero": {
     "desktopSrc": "/assets/videos/optimized/10-o-autostore-1440-v1-a1e670ab93.mp4",
     "mobileSrc": "/assets/videos/optimized/10-o-autostore-960-v1-a1e670ab93.mp4",

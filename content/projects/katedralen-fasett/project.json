@@ -2,11 +2,15 @@
   "schemaVersion": 1,
   "slug": "katedralen-fasett",
   "order": 13,
-  "title": "Katedralen / Fasett",
+  "title": "Katedralen",
   "wip": true,
   "summary": "",
   "services": [],
-  "credits": [],
+  "credits": [
+    {
+      "name": "Fasett"
+    }
+  ],
   "hero": {
     "desktopSrc": "/assets/videos/optimized/13-o-clipped-katedralen-1440-v1-c230f6b9ee.mp4",
     "mobileSrc": "/assets/videos/optimized/13-o-clipped-katedralen-960-v1-c230f6b9ee.mp4",

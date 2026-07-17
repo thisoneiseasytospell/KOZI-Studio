@@ -512,11 +512,64 @@ async function setupCaseStudies() {
       wrapper.append(trigger, tooltip);
       caseStudySummary.append(wrapper);
 
+      const updateTooltipPosition = () => positionTermTooltip(trigger, tooltip);
+      trigger.addEventListener("pointerdown", updateTooltipPosition);
+      trigger.addEventListener("focus", updateTooltipPosition);
+
       sourceIndex = matcher.lastIndex;
       tooltipIndex += 1;
     }
 
     caseStudySummary.append(document.createTextNode(summary.slice(sourceIndex)));
+    requestAnimationFrame(positionTermTooltips);
+  }
+
+  function positionTermTooltip(trigger, tooltip) {
+    const visualViewport = window.visualViewport;
+    const viewportLeft = visualViewport?.offsetLeft || 0;
+    const viewportTop = visualViewport?.offsetTop || 0;
+    const viewportWidth = visualViewport?.width || document.documentElement.clientWidth;
+    const viewportHeight = visualViewport?.height || document.documentElement.clientHeight;
+    const viewportPadding = 16;
+    const minimumLeft = viewportLeft + viewportPadding;
+    const maximumRight = viewportLeft + viewportWidth - viewportPadding;
+
+    tooltip.style.setProperty("--case-tooltip-shift-x", "0px");
+    tooltip.classList.remove("is-below");
+
+    const triggerRect = trigger.getBoundingClientRect();
+    const tooltipWidth = tooltip.offsetWidth;
+    const tooltipHeight = tooltip.offsetHeight;
+    const centeredLeft = triggerRect.left + triggerRect.width / 2 - tooltipWidth / 2;
+    const centeredRight = centeredLeft + tooltipWidth;
+    let horizontalShift = 0;
+
+    if (centeredLeft < minimumLeft) {
+      horizontalShift = minimumLeft - centeredLeft;
+    } else if (centeredRight > maximumRight) {
+      horizontalShift = maximumRight - centeredRight;
+    }
+
+    tooltip.style.setProperty("--case-tooltip-shift-x", `${horizontalShift}px`);
+
+    const maximumBottom = viewportTop + viewportHeight - viewportPadding;
+    const tooltipTop = triggerRect.top - 8 - tooltipHeight;
+    const fitsBelow = triggerRect.bottom + 8 + tooltipHeight <= maximumBottom;
+
+    if (tooltipTop < viewportTop + viewportPadding && fitsBelow) {
+      tooltip.classList.add("is-below");
+    }
+  }
+
+  function positionTermTooltips() {
+    caseStudySummary.querySelectorAll(".case-study-term").forEach((term) => {
+      const trigger = term.querySelector(".case-study-term-trigger");
+      const tooltip = term.querySelector(".case-study-term-tooltip");
+
+      if (trigger && tooltip) {
+        positionTermTooltip(trigger, tooltip);
+      }
+    });
   }
 
   function createMediaFigure(media) {
@@ -1839,7 +1892,11 @@ async function setupCaseStudies() {
     caseStudyDialog.querySelectorAll("video").forEach(syncVideoPlayback);
   });
 
-  window.addEventListener("resize", sizeHero);
+  window.addEventListener("resize", () => {
+    sizeHero();
+    positionTermTooltips();
+  });
+  window.visualViewport?.addEventListener("resize", positionTermTooltips);
 
   const initialSlug = document.body.dataset.initialProject || slugFromLocation();
 

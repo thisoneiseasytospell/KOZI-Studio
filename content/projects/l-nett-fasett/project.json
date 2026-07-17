@@ -2,11 +2,15 @@
   "schemaVersion": 1,
   "slug": "l-nett-fasett",
   "order": 11,
-  "title": "L-nett / Fasett",
+  "title": "L-nett",
   "wip": true,
   "summary": "",
   "services": [],
-  "credits": [],
+  "credits": [
+    {
+      "name": "Fasett"
+    }
+  ],
   "hero": {
     "desktopSrc": "/assets/videos/optimized/11-lnett-colors-patterns-1440-v1-b3295d5186.mp4",
     "mobileSrc": "/assets/videos/optimized/11-lnett-colors-patterns-960-v1-b3295d5186.mp4",

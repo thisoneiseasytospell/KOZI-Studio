@@ -2,11 +2,15 @@
   "schemaVersion": 1,
   "slug": "norsk-oljemuseum-fasett",
   "order": 9,
-  "title": "Norsk Oljemuseum / Fasett",
+  "title": "Norsk Oljemuseum",
   "wip": true,
   "summary": "",
   "services": [],
-  "credits": [],
+  "credits": [
+    {
+      "name": "Fasett"
+    }
+  ],
   "hero": {
     "desktopSrc": "/assets/videos/optimized/09-o-CCS-1440-v1-440aa1d00d.mp4",
     "mobileSrc": "/assets/videos/optimized/09-o-CCS-960-v1-440aa1d00d.mp4",

@@ -903,9 +903,11 @@ main {
 }
 
 .case-study-term-tooltip {
+  --case-tooltip-shift-x: 0px;
   background: #050505;
   border-radius: 6px;
   bottom: calc(100% + 8px);
+  box-sizing: border-box;
   color: #fff;
   left: 50%;
   line-height: 1.2;
@@ -914,19 +916,24 @@ main {
   pointer-events: none;
   position: absolute;
   text-align: left;
-  transform: translate(-50%, 4px);
+  transform: translate(calc(-50% + var(--case-tooltip-shift-x)), 4px);
   transition:
     opacity 140ms linear,
     transform 180ms var(--reveal-ease);
   white-space: normal;
-  width: min(240px, calc(100vw - 64px));
+  width: min(240px, calc(100vw - 32px));
   z-index: 20;
+}
+
+.case-study-term-tooltip.is-below {
+  bottom: auto;
+  top: calc(100% + 8px);
 }
 
 .case-study-term:hover .case-study-term-tooltip,
 .case-study-term:focus-within .case-study-term-tooltip {
   opacity: 1;
-  transform: translate(-50%, 0);
+  transform: translate(calc(-50% + var(--case-tooltip-shift-x)), 0);
 }
 
 .case-study-services {
