@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "slug": "snohetta",
   "order": 3,
-  "title": "Snøhetta",
+  "title": "Snøhetta Design",
   "wip": true,
   "summary": "",
   "tags": [],
@@ -12,7 +12,25 @@
     "desktopSrc": "/assets/videos/optimized/03-Corvematta-4K-Single-1440-v1-f745c576ba.mp4",
     "mobileSrc": "/assets/videos/optimized/03-Corvematta-4K-Single-960-v1-f745c576ba.mp4",
     "alt": "Motion design project for Snøhetta",
-    "aspectRatio": "16 / 9"
+    "aspectRatio": "16 / 9",
+    "caption": "Coarvemátta, Kautokeino, Norway — signage 3D viz."
   },
-  "media": []
+  "media": [
+    {
+      "type": "video",
+      "desktopSrc": "/assets/videos/optimized/05-type-explosion--2--1440-v1-f0cc4079ea.mp4",
+      "mobileSrc": "/assets/videos/optimized/05-type-explosion--2--960-v1-f0cc4079ea.mp4",
+      "alt": "Animated typography for the Norwegian Opera House and Snøhetta",
+      "aspectRatio": "16 / 9",
+      "caption": "Norwegian Opera House"
+    },
+    {
+      "type": "video",
+      "desktopSrc": "/assets/videos/optimized/12-o-Ege-mock-matter-1440-v1-e703332483.mp4",
+      "mobileSrc": "/assets/videos/optimized/12-o-Ege-mock-matter-960-v1-e703332483.mp4",
+      "alt": "Ege material motion project for Snøhetta",
+      "aspectRatio": "16 / 9",
+      "caption": "Ege, 3 Days of Design, Copenhagen"
+    }
+  ]
 }

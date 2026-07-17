@@ -169,7 +169,7 @@ if (stage && frame && videos.length === 2 && projectLabel && projectNumber && pr
 }
 
 async function setupWorkStage() {
-  const response = await fetch("./assets/projects/index.json?v=3");
+  const response = await fetch("./assets/projects/index.json?v=4");
 
   if (!response.ok) {
     throw new Error(`Unable to load video manifest: ${response.status}`);
@@ -196,6 +196,7 @@ async function setupWorkStage() {
       index,
       order: Number(project.order) || index + 1,
       slug: project.slug,
+      caseStudySlug: project.caseStudySlug || project.slug,
       title: project.title,
       alt: project.alt || `${project.title} project preview`,
       detailPath: project.detailPath,
@@ -583,7 +584,8 @@ async function setupWorkStage() {
 
     window.dispatchEvent(new CustomEvent("kozi:requestprojectopen", {
       detail: {
-        slug: project.slug,
+        slug: project.caseStudySlug,
+        stageSlug: project.slug,
         project: { ...project },
         frame,
         video: activeVideo,

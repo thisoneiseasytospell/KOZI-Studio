@@ -16,6 +16,7 @@ const caseCreditsSection = document.querySelector("[data-case-credits-section]")
 const caseCredits = document.querySelector("[data-case-credits]");
 const caseHero = document.querySelector("[data-case-hero]");
 const caseHeroVideo = document.querySelector("[data-case-hero-video]");
+const caseHeroCaption = document.querySelector("[data-case-hero-caption]");
 const caseGallery = document.querySelector("[data-case-gallery]");
 const caseProjectList = document.querySelector("[data-case-project-list]");
 const caseStatus = document.querySelector("[data-case-status]");
@@ -46,19 +47,22 @@ async function setupCaseStudies() {
   const caseScrollDuration = 240;
   const reduceCaseMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   const compactCaseMedia = window.matchMedia("(max-width: 760px), (hover: none), (pointer: coarse)");
-  const response = await fetch("/assets/projects/index.json?v=3");
+  const response = await fetch("/assets/projects/index.json?v=4");
 
   if (!response.ok) {
     throw new Error(`Unable to load project index: ${response.status}`);
   }
 
   const index = await response.json();
-  const projects = Array.isArray(index) ? index : index.projects;
+  const manifest = Array.isArray(index) ? index : index.projects;
 
-  if (!Array.isArray(projects) || projects.length === 0) {
+  if (!Array.isArray(manifest) || manifest.length === 0) {
     throw new Error("The project index does not contain any projects.");
   }
 
+  const projects = manifest.filter(
+    (project) => !project.caseStudySlug || project.caseStudySlug === project.slug
+  );
   projects.sort((first, second) => first.order - second.order);
 
   const details = new Map();
@@ -396,6 +400,7 @@ async function setupCaseStudies() {
 
     caseHero.style.setProperty("--case-ratio", String(ratio));
     caseHero.style.width = `${Math.round(width)}px`;
+    caseHeroCaption.style.width = `${Math.round(width)}px`;
   }
 
   function renderInformation(project) {
@@ -416,8 +421,24 @@ async function setupCaseStudies() {
     credits.forEach((credit) => {
       const role = document.createElement("dt");
       const name = document.createElement("dd");
-      role.textContent = credit.role;
-      name.textContent = credit.name;
+      role.textContent = credit.role || "Credit";
+
+      if (!credit.role) {
+        role.className = "visually-hidden";
+      }
+
+      if (credit.href) {
+        const link = document.createElement("a");
+        link.href = credit.href;
+        link.target = "_blank";
+        link.rel = "noopener noreferrer";
+        link.append(credit.name, " ↗");
+        link.setAttribute("aria-label", `${credit.name} (opens in a new tab)`);
+        name.append(link);
+      } else {
+        name.textContent = credit.name;
+      }
+
       caseCredits.append(role, name);
     });
     caseCreditsSection.hidden = credits.length === 0;
@@ -484,6 +505,7 @@ async function setupCaseStudies() {
 
     if (media.type === "image") {
       const image = document.createElement("img");
+      figure.classList.add("case-study-media--image");
       image.src = mediaSource(media);
       image.alt = media.alt;
       image.loading = "lazy";
@@ -559,9 +581,28 @@ async function setupCaseStudies() {
       figure.append(video);
     }
 
-    if (media.caption?.trim()) {
+    const captionViewport = compactCaseMedia.matches ? "mobile" : "desktop";
+    const captionVisible =
+      !media.captionShowOn ||
+      media.captionShowOn === "all" ||
+      media.captionShowOn === captionViewport;
+
+    if (media.caption?.trim() && captionVisible) {
       const caption = document.createElement("figcaption");
-      caption.textContent = media.caption.trim();
+
+      if (media.captionHref) {
+        const link = document.createElement("a");
+        link.className = "case-study-caption-link";
+        link.href = media.captionHref;
+        link.target = "_blank";
+        link.rel = "noopener noreferrer";
+        link.append(media.caption.trim(), " ↗");
+        link.setAttribute("aria-label", `${media.caption.trim()} (opens in a new tab)`);
+        caption.append(link);
+      } else {
+        caption.textContent = media.caption.trim();
+      }
+
       figure.append(caption);
     }
 
@@ -889,6 +930,8 @@ async function setupCaseStudies() {
     const number = formatProjectNumber(project.order);
     caseHeadingNumber.textContent = number;
     caseStudyTitle.textContent = project.title;
+    caseHeroCaption.textContent = project.hero.caption?.trim() || "";
+    caseHeroCaption.hidden = !caseHeroCaption.textContent;
     caseHeroVideo.pause();
 
     if (useOriginVideo) {
@@ -1511,7 +1554,7 @@ async function setupCaseStudies() {
     }
 
     window.dispatchEvent(new CustomEvent("kozi:requeststageproject", {
-      detail: { slug },
+      detail: { slug: origin?.stageSlug || slug },
     }));
     caseStatus.textContent = `${project.title} case study opened.`;
 

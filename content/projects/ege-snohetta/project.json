@@ -1,6 +1,7 @@
 {
   "schemaVersion": 1,
   "slug": "ege-snohetta",
+  "caseStudySlug": "snohetta",
   "order": 12,
   "title": "Ege / Snøhetta",
   "wip": true,

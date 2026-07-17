@@ -10,9 +10,10 @@ Each directory contains one `project.json`; its directory name and `slug` must m
 - `glossary` optionally turns matching summary terms into accessible hover, focus, and tap explanations using `{ "term": "...", "definition": "..." }` objects.
 - `tags` is an optional list of short labels shown as pills in the accordion, such as `3D`, `Motion`, `AI`, and `Tool`.
 - `services` is an ordered list such as `Concept`, `Motion Design`, `Graphic Design`, and `Art Direction`.
-- `credits` contains `{ "role": "...", "name": "..." }` objects.
+- `credits` contains `{ "name": "..." }` objects and accepts optional `role` and external `href` values.
 - `hero` supplies the homepage thumbnail and the large case-study video. Always provide optimized desktop and mobile files, concise alt text, and its natural aspect ratio.
-- `media` is the ordered sequence after the project information. It accepts images, videos, and interactive embeds. Images and videos need alt text; every item can have an optional caption and a `showOn` value of `desktop`, `mobile`, or `all`.
+- `caseStudySlug` optionally points a homepage thumbnail to another canonical project, keeping the thumbnail while combining its case-study content.
+- `media` is the ordered sequence after the project information. It accepts images, videos, and interactive embeds. Images and videos need alt text; every item can have an optional caption and a `showOn` value of `desktop`, `mobile`, or `all`. Captions can use `captionHref` and `captionShowOn` for responsive external links.
 
 Example media items:
 
