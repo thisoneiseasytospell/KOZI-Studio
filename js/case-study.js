@@ -759,6 +759,10 @@ async function setupCaseStudies() {
       captionMediaElement = video;
       figure.classList.add("case-study-media--video");
 
+      if (["medium", "small"].includes(media.displaySize)) {
+        figure.classList.add(`case-study-media--${media.displaySize}`);
+      }
+
       if (Math.abs(ratioValue(media.aspectRatio) - 1) < 0.01) {
         figure.classList.add("case-study-media--square");
       }

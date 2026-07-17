@@ -176,6 +176,13 @@ function validateProject(project, directoryName) {
           fail(`${project.slug} video ${index + 1} ${field} must be a boolean.`);
         }
       });
+
+      if (
+        item.displaySize !== undefined &&
+        !["medium", "small"].includes(item.displaySize)
+      ) {
+        fail(`${project.slug} video ${index + 1} displaySize must be medium or small.`);
+      }
     }
 
     if (item.type === "embed" && (!item.src || !item.title)) {

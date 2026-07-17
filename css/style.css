@@ -1274,6 +1274,15 @@ main {
 }
 
 @media (min-width: 761px) and (hover: hover) and (pointer: fine) {
+  .case-study-media--medium video {
+    max-width: min(66vw, 680px);
+  }
+
+  .case-study-media--small video {
+    max-height: min(60svh, 500px);
+    max-width: min(48vw, 500px);
+  }
+
   .case-study-gallery--uniform .case-study-media--square video {
     max-height: min(68svh, 640px);
     max-width: min(68vw, 640px);

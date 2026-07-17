@@ -64,14 +64,16 @@
       "desktopSrc": "/assets/projects/wdka-graduation-show/09-identity-typography-detail.mp4",
       "mobileSrc": "/assets/projects/wdka-graduation-show/09-identity-typography-detail.mp4",
       "alt": "Animated close-up of dark green WdKA Graduation typography on a pale green background",
-      "aspectRatio": "25 / 13"
+      "aspectRatio": "25 / 13",
+      "displaySize": "medium"
     },
     {
       "type": "video",
       "desktopSrc": "/assets/projects/wdka-graduation-show/10-wdka-graduation-typography.mp4",
       "mobileSrc": "/assets/projects/wdka-graduation-show/10-wdka-graduation-typography.mp4",
       "alt": "Animated red WdKA Graduation typography on a pale blue background",
-      "aspectRatio": "1 / 1"
+      "aspectRatio": "1 / 1",
+      "displaySize": "small"
     },
     {
       "type": "video",
