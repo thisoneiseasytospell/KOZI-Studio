@@ -51,11 +51,6 @@
     },
     {
       "type": "image",
-      "src": "/assets/projects/wdka-graduation-show/02-graduation-flag.webp",
-      "alt": "Green WdKA Graduation Show flag waving against a blue sky"
-    },
-    {
-      "type": "image",
       "src": "/assets/projects/wdka-graduation-show/03-markthal-display.webp",
       "alt": "WdKA Graduation Show campaign displayed inside Rotterdam Markthal"
     },

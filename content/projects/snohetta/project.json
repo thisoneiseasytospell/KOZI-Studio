@@ -4,11 +4,11 @@
   "order": 3,
   "title": "Snøhetta Design",
   "wip": false,
-  "summary": "",
+  "summary": "During my six-month internship at Snøhetta Design in Oslo, Norway, I contributed motion design, 3D and creative code to projects including Canada Goose, 113 Spring NYC, the Norwegian Opera House, Promenaden, Viabizzuno and Ege Carpets. The internship later developed into an ongoing collaboration.",
   "tags": [
-    "Graphic Design",
+    "Graphic",
     "3D",
-    "Motion Design"
+    "Motion"
   ],
   "services": [],
   "credits": [],
@@ -20,6 +20,33 @@
     "caption": "Coarvemátta, Kautokeino, Norway — signage 3D viz."
   },
   "media": [
+    {
+      "type": "image",
+      "src": "/assets/projects/snohetta/canada-goose-paris-interior-01.webp",
+      "alt": "Canada Goose flagship store interior in Paris with a dithered feature wall",
+      "caption": "Canada Goose, Corso Giacomo Matteotti, Milan — Photo: Snøhetta"
+    },
+    {
+      "type": "image",
+      "src": "/assets/projects/snohetta/canada-goose-paris-interior-02.webp",
+      "alt": "Canada Goose flagship store in Paris with jackets displayed around a luminous ceiling",
+      "caption": "Canada Goose, 71–73 Avenue des Champs-Élysées, Paris — Photo: Snøhetta"
+    },
+    {
+      "type": "image",
+      "src": "/assets/projects/snohetta/canada-goose-dither-system.webp",
+      "alt": "Monochrome Canada Goose image rendered from a repeating emblem-based dither pattern",
+      "caption": "Canada Goose — emblem-based dither system — Credit: Andrea Novali"
+    },
+    {
+      "type": "video",
+      "desktopSrc": "/assets/projects/snohetta/canada-goose-angled-1080.mp4",
+      "mobileSrc": "/assets/projects/snohetta/canada-goose-angled-720.mp4",
+      "poster": "/assets/projects/snohetta/canada-goose-angled-poster.webp",
+      "alt": "Animated detail of the custom dithered image treatment developed for Canada Goose",
+      "aspectRatio": "16 / 9",
+      "caption": "Canada Goose — custom image-treatment algorithm — Credit: Andrea Novali"
+    },
     {
       "type": "video",
       "desktopSrc": "/assets/videos/optimized/05-type-explosion--2--1440-v1-f0cc4079ea.mp4",

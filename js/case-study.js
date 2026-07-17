@@ -87,6 +87,17 @@ async function setupCaseStudies() {
   let openedFromHomepage = false;
   let caseHistoryDepth = 0;
   let videoObserver = null;
+  const imageCaptionObserver = typeof ResizeObserver === "function"
+    ? new ResizeObserver((entries) => {
+        entries.forEach((entry) => {
+          const caption = entry.target.nextElementSibling;
+
+          if (caption?.tagName === "FIGCAPTION") {
+            caption.style.width = `${entry.contentRect.width}px`;
+          }
+        });
+      })
+    : null;
   let closeAfterHistoryChange = false;
   let ghostAnimation = null;
   let borrowedStageVideo = null;
@@ -291,6 +302,14 @@ async function setupCaseStudies() {
   }
 
   function syncVideoPlayback(video) {
+    if (video.dataset.caseAutoplay === "false") {
+      if (!isOpen || document.hidden || !visibleVideos.has(video)) {
+        video.pause();
+      }
+
+      return;
+    }
+
     video.muted = true;
     video.defaultMuted = true;
     video.volume = 0;
@@ -501,10 +520,12 @@ async function setupCaseStudies() {
 
   function createMediaFigure(media) {
     const figure = document.createElement("figure");
+    let imageElement = null;
     figure.className = "case-study-media";
 
     if (media.type === "image") {
       const image = document.createElement("img");
+      imageElement = image;
       figure.classList.add("case-study-media--image");
       image.src = mediaSource(media);
       image.alt = media.alt;
@@ -568,16 +589,24 @@ async function setupCaseStudies() {
       figure.append(frame);
     } else {
       const video = document.createElement("video");
+      const autoplay = media.autoplay !== false;
+      const muted = media.muted !== false;
       video.src = mediaSource(media);
       video.poster = media.poster || "";
       video.loop = media.loop !== false;
-      video.muted = true;
-      video.defaultMuted = true;
+      video.controls = media.controls === true;
+      video.muted = muted;
+      video.defaultMuted = muted;
       video.playsInline = true;
       video.preload = "metadata";
+      video.dataset.caseAutoplay = String(autoplay);
       video.setAttribute("aria-label", media.alt);
       video.style.aspectRatio = String(ratioValue(media.aspectRatio));
-      bindMutedVideo(video);
+
+      if (muted) {
+        bindMutedVideo(video);
+      }
+
       figure.append(video);
     }
 
@@ -604,12 +633,25 @@ async function setupCaseStudies() {
       }
 
       figure.append(caption);
+
+      if (imageElement) {
+        if (imageCaptionObserver) {
+          imageCaptionObserver.observe(imageElement);
+        } else {
+          const syncCaptionWidth = () => {
+            caption.style.width = `${imageElement.getBoundingClientRect().width}px`;
+          };
+
+          imageElement.addEventListener("load", syncCaptionWidth, { once: true });
+        }
+      }
     }
 
     return figure;
   }
 
   function renderGallery(project) {
+    imageCaptionObserver?.disconnect();
     caseGallery.replaceChildren();
     const viewport = compactCaseMedia.matches ? "mobile" : "desktop";
     const media = Array.isArray(project.media)

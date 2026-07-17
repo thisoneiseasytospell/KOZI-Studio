@@ -48,9 +48,9 @@
       "title": "Snøhetta Design",
       "wip": false,
       "tags": [
-        "Graphic Design",
+        "Graphic",
         "3D",
-        "Motion Design"
+        "Motion"
       ],
       "alt": "Motion design project for Snøhetta",
       "aspectRatio": "16 / 9",
@@ -114,7 +114,10 @@
       "caseStudySlug": "pepsico-universe-amsterdam",
       "title": "PepsiCo / UNI_VERSE Amsterdam",
       "wip": true,
-      "tags": [],
+      "tags": [
+        "Motion",
+        "3D"
+      ],
       "alt": "PepsiCo motion project with UNI_VERSE Amsterdam",
       "aspectRatio": "16 / 9",
       "desktopPath": "/assets/videos/optimized/07-o-can-cut-1440-v1-ae1f34b865.mp4",

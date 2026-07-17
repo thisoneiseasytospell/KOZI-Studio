@@ -4,14 +4,40 @@
   "order": 7,
   "title": "PepsiCo / UNI_VERSE Amsterdam",
   "wip": true,
-  "summary": "",
-  "services": [],
-  "credits": [],
+  "summary": "For Pepsi’s global rebrand launch outside North America, I contributed fast-cut sequences, 2D motion design and one 3D sequence to the Titan Sizzle film at UNI_VERSE. The project translated Pepsi’s new visual identity into a bold and energetic launch film.",
+  "tags": [
+    "Motion",
+    "3D"
+  ],
+  "services": [
+    "2D Motion Design",
+    "3D Motion Design"
+  ],
+  "credits": [
+    {
+      "role": "Studio",
+      "name": "UNI_VERSE Amsterdam",
+      "href": "https://universestudio.xyz/work/pepsico-titan-sizzle/"
+    }
+  ],
   "hero": {
     "desktopSrc": "/assets/videos/optimized/07-o-can-cut-1440-v1-ae1f34b865.mp4",
     "mobileSrc": "/assets/videos/optimized/07-o-can-cut-960-v1-ae1f34b865.mp4",
     "alt": "PepsiCo motion project with UNI_VERSE Amsterdam",
     "aspectRatio": "16 / 9"
   },
-  "media": []
+  "media": [
+    {
+      "type": "video",
+      "desktopSrc": "/assets/projects/pepsico-universe-amsterdam/titan-sizzle-1440.mp4",
+      "mobileSrc": "/assets/projects/pepsico-universe-amsterdam/titan-sizzle-960.mp4",
+      "poster": "/assets/projects/pepsico-universe-amsterdam/titan-sizzle-poster.webp",
+      "alt": "Pepsi Titan Sizzle global rebrand launch film",
+      "aspectRatio": "16 / 9",
+      "autoplay": false,
+      "controls": true,
+      "muted": false,
+      "loop": false
+    }
+  ]
 }

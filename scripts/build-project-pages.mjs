@@ -136,6 +136,14 @@ function validateProject(project, directoryName) {
       fail(`${project.slug} video ${index + 1} needs desktopSrc and mobileSrc.`);
     }
 
+    if (item.type === "video") {
+      ["autoplay", "controls", "muted", "loop"].forEach((field) => {
+        if (item[field] !== undefined && typeof item[field] !== "boolean") {
+          fail(`${project.slug} video ${index + 1} ${field} must be a boolean.`);
+        }
+      });
+    }
+
     if (item.type === "embed" && (!item.src || !item.title)) {
       fail(`${project.slug} embed ${index + 1} needs src and title.`);
     }

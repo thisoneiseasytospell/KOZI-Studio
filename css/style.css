@@ -1021,6 +1021,7 @@ main {
 .case-study-media--image figcaption {
   margin: 0 auto;
   max-width: min(86%, 520px);
+  text-align: left;
 }
 
 .case-study-media + .case-study-media video {
@@ -1096,13 +1097,15 @@ main {
 
 .case-study-media figcaption {
   color: rgba(5, 5, 5, 0.62);
-  padding-top: 7px;
+  padding-top: 4px;
+  text-align: left;
 }
 
 .case-study-hero-caption {
   color: rgba(5, 5, 5, 0.62);
   margin: 0 auto;
-  padding-top: 7px;
+  padding-top: 4px;
+  text-align: left;
 }
 
 .case-study-projects {
@@ -1425,7 +1428,32 @@ main {
   }
 
   .case-study-gallery {
+    gap: 32px;
     padding-bottom: 80px;
+  }
+
+  .case-study-hero,
+  .case-study-media img,
+  .case-study-media video {
+    border-radius: 0;
+  }
+
+  .case-study-media img,
+  .case-study-media video {
+    margin: 0;
+    max-height: none;
+    max-width: none;
+    width: 100%;
+  }
+
+  .case-study-media video {
+    -webkit-clip-path: inset(0.5px);
+    clip-path: inset(0.5px);
+  }
+
+  .case-study-media--image figcaption {
+    margin: 0;
+    max-width: 100%;
   }
 
   .case-study-projects-label {
@@ -1443,7 +1471,9 @@ main {
   .case-study-project-link {
     gap: 8px;
     grid-template-columns: 32px minmax(0, 1fr) auto;
-    min-height: 30px;
+    min-height: 48px;
+    overflow: visible;
+    padding: 12px 7px 13px;
   }
 
   .case-study-project-tags {
@@ -1455,10 +1485,16 @@ main {
     padding: 0 5px;
   }
 
+  .case-study-project-tag-label {
+    line-height: 1.2;
+  }
+
   .case-study-project-title {
     font-size: inherit;
+    line-height: 1.2;
     min-width: 0;
     overflow: hidden;
+    padding-bottom: 1px;
     text-overflow: ellipsis;
     white-space: nowrap;
   }

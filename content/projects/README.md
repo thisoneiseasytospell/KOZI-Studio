@@ -44,4 +44,6 @@ Example media items:
 ]
 ```
 
-All case-study videos are forced to remain muted in the interface.
+Case-study videos autoplay silently by default. For a user-controlled film with sound,
+set `"autoplay": false`, `"controls": true`, and `"muted": false`; use `"loop": false`
+when the film should stop at the end.
