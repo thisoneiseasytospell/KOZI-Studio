@@ -1023,7 +1023,7 @@ main {
   max-width: min(86%, 520px);
 }
 
-.case-study-media--image + .case-study-media video {
+.case-study-media + .case-study-media video {
   margin-top: clamp(32px, 6vw, 88px);
 }
 
