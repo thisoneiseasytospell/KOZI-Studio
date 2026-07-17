@@ -31,7 +31,17 @@
       "src": "/assets/interactive/flag-studio/index.html",
       "title": "Interactive WdKA Flag Studio",
       "aspectRatio": "16 / 10",
-      "caption": "Interactive prototype — switch to Interact to make a flag, then back to scrolling to continue."
+      "caption": "Interactive prototype — switch to Interact to make a flag, then back to scrolling to continue.",
+      "showOn": "desktop"
+    },
+    {
+      "type": "video",
+      "desktopSrc": "/assets/projects/wdka-graduation-show/flag-studio-mobile-demo-960.mp4",
+      "mobileSrc": "/assets/projects/wdka-graduation-show/flag-studio-mobile-demo-960.mp4",
+      "poster": "/assets/projects/wdka-graduation-show/flag-studio-mobile-demo-poster.webp",
+      "alt": "Demonstration of the interactive WdKA Flag Studio workflow",
+      "aspectRatio": "16 / 9",
+      "showOn": "mobile"
     },
     {
       "type": "image",

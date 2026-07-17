@@ -85,6 +85,7 @@ async function setupCaseStudies() {
   let videoObserver = null;
   let closeAfterHistoryChange = false;
   let ghostAnimation = null;
+  let borrowedStageVideo = null;
   let scrollAnimationFrame = 0;
   let isProjectSwitching = false;
   let queuedProjectRequest = null;
@@ -103,6 +104,19 @@ async function setupCaseStudies() {
     return compactCaseMedia.matches
       ? media.mobileSrc || media.desktopSrc || media.src
       : media.desktopSrc || media.mobileSrc || media.src;
+  }
+
+  function canBorrowOriginVideo(project, origin) {
+    if (!origin?.video?.currentSrc || !origin?.frame) {
+      return false;
+    }
+
+    try {
+      const heroSource = new URL(mediaSource(project.hero), document.baseURI).href;
+      return heroSource === origin.video.currentSrc;
+    } catch {
+      return false;
+    }
   }
 
   function ratioValue(value) {
@@ -260,6 +274,10 @@ async function setupCaseStudies() {
   }
 
   function shouldVideoPlay(video) {
+    if (video === borrowedStageVideo?.video) {
+      return isOpen && !document.hidden;
+    }
+
     return (
       isOpen &&
       !document.hidden &&
@@ -320,8 +338,46 @@ async function setupCaseStudies() {
     });
   }
 
-  function pauseAllCaseVideos() {
-    caseStudyDialog.querySelectorAll("video").forEach((video) => video.pause());
+  function pauseAllCaseVideos(except = null) {
+    caseStudyDialog.querySelectorAll("video").forEach((video) => {
+      if (video !== except) {
+        video.pause();
+      }
+    });
+  }
+
+  function casePlaybackVideo() {
+    return borrowedStageVideo?.video || caseHeroVideo;
+  }
+
+  function restoreBorrowedStageVideo() {
+    if (!borrowedStageVideo) {
+      return null;
+    }
+
+    const handoff = borrowedStageVideo;
+    const { video, parent, nextSibling } = handoff;
+    borrowedStageVideo = null;
+    video.classList.remove("is-case-video");
+    video.loop = handoff.loop;
+
+    if (handoff.ariaLabel === null) {
+      video.removeAttribute("aria-label");
+    } else {
+      video.setAttribute("aria-label", handoff.ariaLabel);
+    }
+
+    if (nextSibling?.parentNode === parent) {
+      parent.insertBefore(video, nextSibling);
+    } else {
+      parent.append(video);
+    }
+
+    caseHeroVideo.hidden = false;
+    window.dispatchEvent(new CustomEvent("kozi:stagevideohandoff", {
+      detail: { active: false },
+    }));
+    return video;
   }
 
   function sizeHero() {
@@ -514,7 +570,10 @@ async function setupCaseStudies() {
 
   function renderGallery(project) {
     caseGallery.replaceChildren();
-    const media = Array.isArray(project.media) ? project.media : [];
+    const viewport = compactCaseMedia.matches ? "mobile" : "desktop";
+    const media = Array.isArray(project.media)
+      ? project.media.filter((item) => !item.showOn || item.showOn === "all" || item.showOn === viewport)
+      : [];
     media.forEach((item) => caseGallery.append(createMediaFigure(item)));
     caseGallery.hidden = media.length === 0;
   }
@@ -823,7 +882,7 @@ async function setupCaseStudies() {
 
   function renderProject(
     project,
-    { currentTime = 0, expanded = true } = {}
+    { currentTime = 0, expanded = true, useOriginVideo = false } = {}
   ) {
     activeProject = project;
     activeSlug = project.slug;
@@ -831,14 +890,21 @@ async function setupCaseStudies() {
     caseHeadingNumber.textContent = number;
     caseStudyTitle.textContent = project.title;
     caseHeroVideo.pause();
-    caseHeroVideo.src = mediaSource(project.hero);
-    caseHeroVideo.poster = project.hero.poster || "";
-    caseHeroVideo.loop = project.hero.loop !== false;
-    caseHeroVideo.muted = true;
-    caseHeroVideo.defaultMuted = true;
-    caseHeroVideo.volume = 0;
-    caseHeroVideo.setAttribute("aria-label", project.hero.alt);
-    setHeroTime(caseHeroVideo, currentTime);
+
+    if (useOriginVideo) {
+      caseHeroVideo.hidden = true;
+    } else {
+      restoreBorrowedStageVideo();
+      caseHeroVideo.hidden = false;
+      caseHeroVideo.src = mediaSource(project.hero);
+      caseHeroVideo.poster = project.hero.poster || "";
+      caseHeroVideo.loop = project.hero.loop !== false;
+      caseHeroVideo.muted = true;
+      caseHeroVideo.defaultMuted = true;
+      caseHeroVideo.volume = 0;
+      caseHeroVideo.setAttribute("aria-label", project.hero.alt);
+      setHeroTime(caseHeroVideo, currentTime);
+    }
     renderInformation(project);
     renderGallery(project);
     const activeItem = projectItemForSlug(project.slug);
@@ -864,6 +930,14 @@ async function setupCaseStudies() {
 
   buildProjectList();
   bindMutedVideo(caseHeroVideo);
+  compactCaseMedia.addEventListener("change", () => {
+    if (!isOpen || !activeProject) {
+      return;
+    }
+
+    renderGallery(activeProject);
+    setupVideoObserver();
+  });
 
   function transformRectToBase(rect, base) {
     const translateX = rect.left - base.left;
@@ -875,12 +949,7 @@ async function setupCaseStudies() {
   }
 
   async function animateThumbnailIntoHero(origin) {
-    if (
-      reduceCaseMotion ||
-      !origin?.frame ||
-      !origin?.video ||
-      !origin.video.currentSrc
-    ) {
+    if (!origin?.frame || !origin?.video || !origin.video.currentSrc) {
       caseStudyLayer.classList.remove("is-ghosting");
       syncVideoPlayback(caseHeroVideo);
       return;
@@ -889,6 +958,112 @@ async function setupCaseStudies() {
     await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
     const start = origin.frame.getBoundingClientRect();
     const end = caseHero.getBoundingClientRect();
+    const reuseOriginVideo = origin.reuseVideo === true;
+
+    if (reuseOriginVideo) {
+      const video = origin.video;
+      const parent = video.parentNode;
+      const nextSibling = video.nextSibling;
+
+      if (!parent) {
+        caseStudyLayer.classList.remove("is-ghosting");
+        caseHeroVideo.hidden = false;
+        syncVideoPlayback(caseHeroVideo);
+        return;
+      }
+
+      borrowedStageVideo = {
+        video,
+        parent,
+        nextSibling,
+        frame: origin.frame,
+        slug: activeProject.slug,
+        loop: video.loop,
+        ariaLabel: video.getAttribute("aria-label"),
+      };
+      video.classList.add("is-case-video");
+      video.loop = activeProject.hero.loop !== false;
+      video.setAttribute("aria-label", activeProject.hero.alt);
+      caseHeroVideo.hidden = true;
+      window.dispatchEvent(new CustomEvent("kozi:stagevideohandoff", {
+        detail: { active: true },
+      }));
+
+      if (
+        reduceCaseMotion ||
+        start.width < 1 ||
+        start.height < 1 ||
+        end.width < 1 ||
+        end.height < 1
+      ) {
+        caseHero.append(video);
+        video.play().catch(() => {});
+        caseStudyLayer.classList.remove("is-ghosting");
+        setupVideoObserver();
+        syncVideoPlayback(video);
+        return;
+      }
+
+      const ghost = document.createElement("div");
+      ghost.className = "case-study-transition-ghost";
+      Object.assign(ghost.style, {
+        left: `${end.left}px`,
+        top: `${end.top}px`,
+        width: `${end.width}px`,
+        height: `${end.height}px`,
+        transformOrigin: "top left",
+      });
+      ghost.append(video);
+      document.body.append(ghost);
+      video.play().catch(() => {});
+
+      const animation = ghost.animate(
+        [
+          {
+            transform: transformRectToBase(start, end),
+            borderRadius: "0px",
+          },
+          {
+            transform: "translate3d(0, 0, 0) scale(1, 1)",
+            borderRadius: "12px",
+          },
+        ],
+        {
+          duration: compactCaseMedia.matches ? 620 : 820,
+          easing: "cubic-bezier(0.19, 1, 0.22, 1)",
+          fill: "forwards",
+        }
+      );
+      ghostAnimation = animation;
+
+      try {
+        await animation.finished;
+      } catch {
+        // A new navigation can intentionally cancel the transition.
+      }
+
+      if (ghostAnimation !== animation || borrowedStageVideo?.video !== video) {
+        if (borrowedStageVideo?.video === video) {
+          restoreBorrowedStageVideo();
+        }
+        ghost.remove();
+        return;
+      }
+
+      ghostAnimation = null;
+      caseHero.append(video);
+      ghost.remove();
+      caseStudyLayer.classList.remove("is-ghosting");
+      setupVideoObserver();
+      syncVideoPlayback(video);
+      return;
+    }
+
+    if (reduceCaseMotion) {
+      caseStudyLayer.classList.remove("is-ghosting");
+      syncVideoPlayback(caseHeroVideo);
+      return;
+    }
 
     if (start.width < 1 || start.height < 1 || end.width < 1 || end.height < 1) {
       caseStudyLayer.classList.remove("is-ghosting");
@@ -958,6 +1133,69 @@ async function setupCaseStudies() {
   function animateHeroIntoThumbnail() {
     const frame = document.querySelector("[data-video-frame]");
     const accordionPanel = caseHero.closest(".case-study-accordion-panel");
+
+    if (borrowedStageVideo?.video && frame) {
+      const handoff = borrowedStageVideo;
+      const video = handoff.video;
+      const start = caseHero.getBoundingClientRect();
+      const end = frame.getBoundingClientRect();
+
+      if (
+        reduceCaseMotion ||
+        start.width < 1 ||
+        start.height < 1 ||
+        end.width < 1 ||
+        end.height < 1 ||
+        start.bottom < 0 ||
+        start.top > window.innerHeight
+      ) {
+        restoreBorrowedStageVideo();
+        return null;
+      }
+
+      const ghost = document.createElement("div");
+      ghost.className = "case-study-transition-ghost";
+      Object.assign(ghost.style, {
+        left: `${start.left}px`,
+        top: `${start.top}px`,
+        width: `${start.width}px`,
+        height: `${start.height}px`,
+        borderRadius: "12px",
+        transformOrigin: "top left",
+      });
+      ghost.append(video);
+      document.body.append(ghost);
+      video.play().catch(() => {});
+      caseStudyLayer.classList.add("is-ghosting");
+      const animation = ghost.animate(
+        [
+          {
+            transform: "translate3d(0, 0, 0) scale(1, 1)",
+            borderRadius: "12px",
+          },
+          {
+            transform: transformRectToBase(end, start),
+            borderRadius: "0px",
+          },
+        ],
+        {
+          duration: compactCaseMedia.matches ? 520 : 720,
+          easing: "cubic-bezier(0.65, 0, 0.35, 1)",
+          fill: "forwards",
+        }
+      );
+
+      animation.finished
+        .catch(() => {})
+        .finally(() => {
+          if (borrowedStageVideo === handoff) {
+            restoreBorrowedStageVideo();
+          }
+          ghost.remove();
+        });
+
+      return animation;
+    }
 
     if (
       reduceCaseMotion ||
@@ -1030,7 +1268,7 @@ async function setupCaseStudies() {
     return animation;
   }
 
-  function prepareLayer({ origin = null } = {}) {
+  function prepareLayer({ origin = null, preserveStageVideo = false } = {}) {
     isOpen = true;
     lastFocusedElement = document.activeElement;
     cancelScrollAnimation();
@@ -1043,7 +1281,7 @@ async function setupCaseStudies() {
     caseStudyDialog.setAttribute("aria-busy", "true");
     setBackgroundInert(true);
     window.dispatchEvent(new CustomEvent("kozi:casestudystate", {
-      detail: { open: true },
+      detail: { open: true, preserveStageVideo },
     }));
   }
 
@@ -1251,13 +1489,15 @@ async function setupCaseStudies() {
       return;
     }
 
+    const useOriginVideo = !replacingProject && canBorrowOriginVideo(project, origin);
+
     if (!replacingProject) {
-      prepareLayer({ origin });
+      prepareLayer({ origin, preserveStageVideo: useOriginVideo });
     }
 
     const activeItem = replacingProject
       ? await transitionToProject(project, { currentTime, token })
-      : renderProject(project, { currentTime });
+      : renderProject(project, { currentTime, useOriginVideo });
 
     if (token !== loadToken || !activeItem) {
       return;
@@ -1276,7 +1516,11 @@ async function setupCaseStudies() {
     caseStatus.textContent = `${project.title} case study opened.`;
 
     if (origin) {
-      await animateThumbnailIntoHero({ ...origin, currentTime });
+      await animateThumbnailIntoHero({
+        ...origin,
+        currentTime,
+        reuseVideo: useOriginVideo,
+      });
     } else {
       caseStudyLayer.classList.remove("is-ghosting");
     }
@@ -1295,19 +1539,25 @@ async function setupCaseStudies() {
       return;
     }
 
+    const playbackVideo = casePlaybackVideo();
+    const handoff = {
+      slug: activeSlug,
+      currentTime: playbackVideo.currentTime || 0,
+      continuousVideo: Boolean(borrowedStageVideo),
+    };
     isOpen = false;
     ++loadToken;
     isProjectSwitching = false;
     queuedProjectRequest = null;
     cancelScrollAnimation();
+    const activeTransitionGhost = document.querySelector(".case-study-transition-ghost");
     ghostAnimation?.cancel();
     ghostAnimation = null;
-    document.querySelector(".case-study-transition-ghost")?.remove();
+    if (activeTransitionGhost?.contains(borrowedStageVideo?.video)) {
+      restoreBorrowedStageVideo();
+    }
+    activeTransitionGhost?.remove();
     const reverseAnimation = animateHeroIntoThumbnail();
-    const handoff = {
-      slug: activeSlug,
-      currentTime: caseHeroVideo.currentTime || 0,
-    };
     pauseAllCaseVideos();
     videoObserver?.disconnect();
     visibleVideos.clear();

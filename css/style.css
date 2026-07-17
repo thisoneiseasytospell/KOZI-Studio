@@ -821,6 +821,10 @@ main {
   width: calc(100% + 2px);
 }
 
+.case-study-hero video[hidden] {
+  display: none;
+}
+
 .case-study-heading {
   display: none;
   gap: 16px;

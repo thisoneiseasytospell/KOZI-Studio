@@ -12,7 +12,7 @@ Each directory contains one `project.json`; its directory name and `slug` must m
 - `services` is an ordered list such as `Concept`, `Motion Design`, `Graphic Design`, and `Art Direction`.
 - `credits` contains `{ "role": "...", "name": "..." }` objects.
 - `hero` supplies the homepage thumbnail and the large case-study video. Always provide optimized desktop and mobile files, concise alt text, and its natural aspect ratio.
-- `media` is the ordered sequence after the project information. It accepts images, videos, and interactive embeds. Images and videos need alt text; every item can have an optional caption.
+- `media` is the ordered sequence after the project information. It accepts images, videos, and interactive embeds. Images and videos need alt text; every item can have an optional caption and a `showOn` value of `desktop`, `mobile`, or `all`.
 
 Example media items:
 

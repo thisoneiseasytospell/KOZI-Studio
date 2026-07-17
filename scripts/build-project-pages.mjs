@@ -124,6 +124,13 @@ function validateProject(project, directoryName) {
     if (item.type === "embed" && (!item.src || !item.title)) {
       fail(`${project.slug} embed ${index + 1} needs src and title.`);
     }
+
+    if (
+      item.showOn !== undefined &&
+      !["all", "desktop", "mobile"].includes(item.showOn)
+    ) {
+      fail(`${project.slug} media ${index + 1} showOn must be all, desktop, or mobile.`);
+    }
   });
 }
 

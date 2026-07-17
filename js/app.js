@@ -256,6 +256,7 @@ async function setupWorkStage() {
   let lastUserActivity = performance.now();
   let frameExpanded = false;
   let caseStudyActive = false;
+  let stageVideoBorrowed = false;
   let expandedLockedPosition = null;
   let trailCursor = 0;
   let lastTrailTime = 0;
@@ -677,7 +678,13 @@ async function setupWorkStage() {
     const activeVideo = videos[activeSlotIndex];
 
     videos.forEach((video, index) => {
-      if (stageVisible && !caseStudyActive && !document.hidden && index === activeSlotIndex) {
+      const borrowedPlayback =
+        stageVideoBorrowed && !document.hidden && index === activeSlotIndex;
+
+      if (
+        borrowedPlayback ||
+        (stageVisible && !caseStudyActive && !document.hidden && index === activeSlotIndex)
+      ) {
         video.play().catch(() => {});
       } else {
         video.pause();
@@ -1021,6 +1028,10 @@ async function setupWorkStage() {
   window.addEventListener("kozi:casestudystate", (event) => {
     const caseStudyClosing = Boolean(event.detail?.closing);
 
+    if (event.detail?.preserveStageVideo) {
+      stageVideoBorrowed = true;
+    }
+
     caseStudyActive = Boolean(event.detail?.open) || caseStudyClosing;
     frameExpanded = false;
     targetFrameScale = 1;
@@ -1036,6 +1047,7 @@ async function setupWorkStage() {
       const activeVideo = videos[activeSlotIndex];
 
       if (
+        !event.detail?.continuousVideo &&
         Number.isFinite(handoffTime) &&
         handoffTime >= 0 &&
         event.detail?.slug === stage.dataset.projectSlug
@@ -1079,6 +1091,11 @@ async function setupWorkStage() {
       idleLastTime = lastUserActivity;
     }
 
+    playActiveVideo();
+  });
+
+  window.addEventListener("kozi:stagevideohandoff", (event) => {
+    stageVideoBorrowed = Boolean(event.detail?.active);
     playActiveVideo();
   });
 
