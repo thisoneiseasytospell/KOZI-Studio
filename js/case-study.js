@@ -460,6 +460,7 @@ async function setupCaseStudies() {
 
       caseCredits.append(role, name);
     });
+    caseCreditsSection.classList.toggle("is-compact", credits.length > 4);
     caseCreditsSection.hidden = credits.length === 0;
     caseStudyInformation.hidden = !summary && services.length === 0 && credits.length === 0;
   }
