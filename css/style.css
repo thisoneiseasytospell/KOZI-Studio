@@ -715,6 +715,7 @@ main {
 }
 
 .case-study-back {
+  -webkit-tap-highlight-color: transparent;
   align-items: center;
   background: transparent;
   border: 0;
@@ -728,6 +729,12 @@ main {
   transition: opacity 180ms linear;
 }
 
+.case-study-back:focus {
+  box-shadow: none;
+  outline: 0;
+  text-decoration: none;
+}
+
 .case-study-back:hover {
   background: transparent;
   color: inherit;
@@ -735,8 +742,8 @@ main {
 }
 
 .case-study-back:focus-visible {
-  outline: 1px solid currentColor;
-  outline-offset: 3px;
+  outline: 0;
+  opacity: 0.5;
   text-decoration: none;
 }
 
