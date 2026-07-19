@@ -327,7 +327,7 @@ if (stage && frame && videos.length === 2 && projectLabel && projectNumber && pr
 }
 
 async function setupWorkStage() {
-  const response = await fetch("./assets/projects/index.json?v=5");
+  const response = await fetch("./assets/projects/index.json?v=6");
 
   if (!response.ok) {
     throw new Error(`Unable to load video manifest: ${response.status}`);
@@ -1162,6 +1162,58 @@ async function setupWorkStage() {
       null,
       true
     );
+  });
+
+  let digitBuffer = "";
+  let digitTimer = 0;
+  const maximumOrder = projects.reduce(
+    (max, project) => Math.max(max, project.order),
+    0
+  );
+
+  function commitDigitBuffer() {
+    window.clearTimeout(digitTimer);
+    const order = digitBuffer === "0" ? 10 : Number(digitBuffer);
+    digitBuffer = "";
+    const projectIndex = projects.findIndex((project) => project.order === order);
+
+    if (projectIndex < 0 || projectIndex === currentProjectIndex) {
+      return;
+    }
+
+    lastUserActivity = performance.now();
+    switchVideo("ascending", projectIndex, true);
+  }
+
+  window.addEventListener("keydown", (event) => {
+    const target = event.target;
+    const isEditable =
+      target instanceof HTMLElement &&
+      (target.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName));
+
+    if (
+      caseStudyActive ||
+      isEditable ||
+      event.repeat ||
+      event.metaKey ||
+      event.ctrlKey ||
+      event.altKey ||
+      !/^[0-9]$/.test(event.key)
+    ) {
+      return;
+    }
+
+    digitBuffer += event.key;
+    window.clearTimeout(digitTimer);
+
+    // Commit as soon as no further digit could name a project ("2" cannot
+    // grow into a valid number when only 15 exist); otherwise wait briefly
+    // for a second digit so tapping "1","1" reads as project 11.
+    if (digitBuffer.length >= 2 || Number(digitBuffer) * 10 > maximumOrder) {
+      commitDigitBuffer();
+    } else {
+      digitTimer = window.setTimeout(commitDigitBuffer, 250);
+    }
   });
 
   window.addEventListener("kozi:casestudystate", (event) => {

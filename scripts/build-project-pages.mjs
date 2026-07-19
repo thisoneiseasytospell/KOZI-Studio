@@ -301,7 +301,7 @@ function projectSummary(project) {
     desktopPath: project.hero.desktopSrc,
     mobilePath: project.hero.mobileSrc,
     poster: project.hero.poster || "",
-    detailPath: `/content/projects/${caseStudySlug}/project.json?v=5`,
+    detailPath: `/content/projects/${caseStudySlug}/project.json?v=6`,
     route: `/work/${caseStudySlug}/`,
   };
 }

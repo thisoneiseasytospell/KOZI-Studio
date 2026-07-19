@@ -60,12 +60,12 @@ async function setupCaseStudies() {
   const compactCaseMedia = window.matchMedia("(max-width: 760px), (hover: none), (pointer: coarse)");
   const rootMotionStyles = window.getComputedStyle(document.documentElement);
   const ghostOpenEase =
-    rootMotionStyles.getPropertyValue("--reveal-ease").trim() ||
-    "cubic-bezier(0.19, 1, 0.22, 1)";
+    rootMotionStyles.getPropertyValue("--ghost-flight-ease").trim() ||
+    "cubic-bezier(0.32, 0.72, 0, 1)";
   const ghostCloseEase =
     rootMotionStyles.getPropertyValue("--intro-collapse-ease").trim() ||
     "cubic-bezier(0.65, 0, 0.35, 1)";
-  const response = await fetch("/assets/projects/index.json?v=5");
+  const response = await fetch("/assets/projects/index.json?v=6");
 
   if (!response.ok) {
     throw new Error(`Unable to load project index: ${response.status}`);
@@ -1182,7 +1182,12 @@ async function setupCaseStudies() {
 
   function renderProject(
     project,
-    { currentTime = 0, expanded = true, useOriginVideo = false } = {}
+    {
+      currentTime = 0,
+      expanded = true,
+      useOriginVideo = false,
+      snapExpansion = false,
+    } = {}
   ) {
     caseStudyContent.hidden = false;
     activeProject = project;
@@ -1221,12 +1226,23 @@ async function setupCaseStudies() {
           setAccordionExpanded(item, false);
         }
       });
+
+    if (activeItem && expanded && snapExpansion) {
+      activeItem.classList.add("is-snap-expanding");
+    }
+
     setAccordionExpanded(activeItem, expanded);
     caseStudyDialog.removeAttribute("aria-labelledby");
     caseStudyDialog.setAttribute("aria-label", `${project.title} case study`);
     updateMetadata(project);
     sizeHero();
     setupVideoObserver();
+
+    if (activeItem && expanded && snapExpansion) {
+      requestAnimationFrame(() => {
+        activeItem.classList.remove("is-snap-expanding");
+      });
+    }
 
     return activeItem;
   }
@@ -1284,33 +1300,10 @@ async function setupCaseStudies() {
   }
 
   function settleGhost(ghost, duration) {
-    const settled = caseHero.getBoundingClientRect();
-    const ghostRect = ghost.getBoundingClientRect();
-    const scaleX = settled.width / Math.max(1, ghostRect.width);
-    const scaleY = settled.height / Math.max(1, ghostRect.height);
-    const deltaX = settled.left - ghostRect.left;
-    const deltaY = settled.top - ghostRect.top;
-
-    // Dissolve the flight shadow so removing the ghost has no visual delta.
+    // Keep the ghost at the flight endpoint while its shadow dissolves. The
+    // hero handoff happens underneath without a secondary position correction.
     ghost.style.transition = `box-shadow ${duration}ms linear`;
     ghost.style.boxShadow = "0 12px 48px rgb(0 0 0 / 0)";
-
-    // Glide out any residual offset between the predicted landing rect and
-    // where the hero actually settled (late layout shifts, rounding).
-    if (
-      Math.abs(deltaX) > 0.5 ||
-      Math.abs(deltaY) > 0.5 ||
-      Math.abs(scaleX - 1) > 0.002 ||
-      Math.abs(scaleY - 1) > 0.002
-    ) {
-      ghost.animate(
-        [
-          { transform: "translate3d(0, 0, 0) scale(1, 1)" },
-          { transform: `translate3d(${deltaX}px, ${deltaY}px, 0) scale(${scaleX}, ${scaleY})` },
-        ],
-        { duration, easing: "ease-out", fill: "forwards" }
-      );
-    }
   }
 
   function finalHeroRect() {
@@ -1420,15 +1413,13 @@ async function setupCaseStudies() {
         [
           {
             transform: transformRectToBase(start, end),
-            borderRadius: "0px",
           },
           {
             transform: "translate3d(0, 0, 0) scale(1, 1)",
-            borderRadius: "12px",
           },
         ],
         {
-          duration: compactCaseMedia.matches ? 620 : 820,
+          duration: compactCaseMedia.matches ? 500 : 620,
           easing: ghostOpenEase,
           fill: "forwards",
         }
@@ -1506,15 +1497,13 @@ async function setupCaseStudies() {
       [
         {
           transform: transformRectToBase(start, end),
-          borderRadius: "0px",
         },
         {
           transform: "translate3d(0, 0, 0) scale(1, 1)",
-          borderRadius: "12px",
         },
       ],
       {
-        duration: compactCaseMedia.matches ? 620 : 820,
+        duration: compactCaseMedia.matches ? 500 : 620,
         easing: ghostOpenEase,
         fill: "forwards",
       }
@@ -1571,7 +1560,6 @@ async function setupCaseStudies() {
         top: `${start.top}px`,
         width: `${start.width}px`,
         height: `${start.height}px`,
-        borderRadius: "12px",
         transformOrigin: "top left",
       });
       ghost.append(video);
@@ -1582,11 +1570,9 @@ async function setupCaseStudies() {
         [
           {
             transform: "translate3d(0, 0, 0) scale(1, 1)",
-            borderRadius: "12px",
           },
           {
             transform: transformRectToBase(end, start),
-            borderRadius: "0px",
           },
         ],
         {
@@ -1640,7 +1626,6 @@ async function setupCaseStudies() {
       top: `${start.top}px`,
       width: `${start.width}px`,
       height: `${start.height}px`,
-      borderRadius: "12px",
       transformOrigin: "top left",
     });
     video.src = caseHeroVideo.currentSrc;
@@ -1659,11 +1644,9 @@ async function setupCaseStudies() {
       [
         {
           transform: "translate3d(0, 0, 0) scale(1, 1)",
-          borderRadius: "12px",
         },
         {
           transform: transformRectToBase(end, start),
-          borderRadius: "0px",
         },
       ],
       {
@@ -1913,9 +1896,15 @@ async function setupCaseStudies() {
     const replacingProject = Boolean(isOpen && activeSlug && activeSlug !== slug);
     const openingFromWorkIndex = Boolean(isOpen && !activeSlug && openedFromWorkIndex);
 
+    let switchDimTimer = 0;
+
     if (replacingProject) {
       isProjectSwitching = true;
-      caseStudyLayer.classList.add("is-switching");
+      // Dim only when project data is actually slow to arrive — switching
+      // between prefetched cases stays snappy with no fade.
+      switchDimTimer = window.setTimeout(() => {
+        caseStudyLayer.classList.add("is-switching");
+      }, 150);
       caseStudyDialog.setAttribute("aria-busy", "true");
     }
 
@@ -1923,7 +1912,10 @@ async function setupCaseStudies() {
 
     try {
       project = await loadProject(slug);
+      window.clearTimeout(switchDimTimer);
     } catch (error) {
+      window.clearTimeout(switchDimTimer);
+
       if (token !== loadToken) {
         return;
       }
@@ -1954,7 +1946,11 @@ async function setupCaseStudies() {
 
     const activeItem = replacingProject
       ? await transitionToProject(project, { currentTime, token })
-      : renderProject(project, { currentTime, useOriginVideo });
+      : renderProject(project, {
+          currentTime,
+          useOriginVideo,
+          snapExpansion: Boolean(origin) && !openingFromWorkIndex,
+        });
 
     if (token !== loadToken || !activeItem) {
       return;
@@ -2072,9 +2068,8 @@ async function setupCaseStudies() {
       return;
     }
 
-    // Hide the layer when its closing transitions actually settle (dialog
-    // opacity and backdrop tint are the two longest-running), with a timeout
-    // backstop in case an event never fires.
+    // Hide the layer when its closing opacity transitions actually settle,
+    // with a timeout backstop in case an event never fires.
     let finalized = false;
     const settling = new Set(["dialog", "backdrop"]);
     const settle = (part) => {
@@ -2097,7 +2092,7 @@ async function setupCaseStudies() {
       }
     };
     const onBackdropSettled = (event) => {
-      if (event.target === caseStudyBackdrop && event.propertyName === "background-color") {
+      if (event.target === caseStudyBackdrop && event.propertyName === "opacity") {
         settle("backdrop");
       }
     };
@@ -2176,6 +2171,22 @@ async function setupCaseStudies() {
     openProject(slug, { historyMode: "push" });
   });
 
+  let caseDigitBuffer = "";
+  let caseDigitTimer = 0;
+
+  function commitCaseDigitBuffer() {
+    window.clearTimeout(caseDigitTimer);
+    const number = caseDigitBuffer === "0" ? 10 : Number(caseDigitBuffer);
+    caseDigitBuffer = "";
+    const project = projects[number - 1];
+
+    if (!project || project.slug === activeSlug) {
+      return;
+    }
+
+    openProject(project.slug, { historyMode: "push" });
+  }
+
   document.addEventListener("keydown", (event) => {
     if (!isOpen) {
       return;
@@ -2186,6 +2197,34 @@ async function setupCaseStudies() {
 
       if (!event.repeat) {
         closeProject();
+      }
+
+      return;
+    }
+
+    const digitTarget = event.target;
+    const digitEditable =
+      digitTarget instanceof HTMLElement &&
+      (digitTarget.isContentEditable ||
+        ["INPUT", "TEXTAREA", "SELECT"].includes(digitTarget.tagName));
+
+    if (
+      !digitEditable &&
+      !event.repeat &&
+      !event.metaKey &&
+      !event.ctrlKey &&
+      !event.altKey &&
+      /^[0-9]$/.test(event.key)
+    ) {
+      caseDigitBuffer += event.key;
+      window.clearTimeout(caseDigitTimer);
+
+      // Same buffering as the stage: "1","1" in quick succession opens case
+      // 11; a digit that cannot grow into a valid number commits at once.
+      if (caseDigitBuffer.length >= 2 || Number(caseDigitBuffer) * 10 > projects.length) {
+        commitCaseDigitBuffer();
+      } else {
+        caseDigitTimer = window.setTimeout(commitCaseDigitBuffer, 250);
       }
 
       return;
