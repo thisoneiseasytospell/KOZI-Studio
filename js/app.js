@@ -1,10 +1,23 @@
 document.documentElement.classList.add("js");
 
-const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+const reduceMotionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+let reduceMotion = reduceMotionQuery.matches;
+
+reduceMotionQuery.addEventListener?.("change", () => {
+  reduceMotion = reduceMotionQuery.matches;
+});
+
 const hoverCapable = window.matchMedia("(hover: hover) and (pointer: fine)");
 const coarsePointer = window.matchMedia("(pointer: coarse)");
 const deviceDarkTheme = window.matchMedia("(prefers-color-scheme: dark)");
-let themeInverted = false;
+const themeStorageKey = "kozi-theme-inverted";
+let themeInverted = (() => {
+  try {
+    return window.sessionStorage.getItem(themeStorageKey) === "true";
+  } catch {
+    return false;
+  }
+})();
 let themeTransitionFrame = 0;
 
 function updateThemeInversion() {
@@ -27,6 +40,13 @@ function updateThemeInversion() {
 
 function toggleThemeInversion() {
   themeInverted = !themeInverted;
+
+  try {
+    window.sessionStorage.setItem(themeStorageKey, String(themeInverted));
+  } catch {
+    // Storage can be unavailable in private browsing; the toggle still works.
+  }
+
   updateThemeInversion();
 }
 
@@ -213,12 +233,18 @@ function setupIntroDisclosure() {
     }
   }
 
+  let followAnimationFrame = 0;
+
   trigger.addEventListener("pointerenter", (event) => {
     updateFollowTarget(event);
     trigger.classList.toggle("is-following", hoverCapable.matches);
+    startFollowAnimation();
   });
 
-  trigger.addEventListener("pointermove", updateFollowTarget);
+  trigger.addEventListener("pointermove", (event) => {
+    updateFollowTarget(event);
+    startFollowAnimation();
+  });
 
   trigger.addEventListener("pointerleave", () => {
     trigger.classList.remove("is-following");
@@ -230,7 +256,23 @@ function setupIntroDisclosure() {
     followPosition.x += (followTarget.x - followPosition.x) * easing;
     followPosition.y += (followTarget.y - followPosition.y) * easing;
     followLabel.style.transform = `translate3d(${followPosition.x}px, ${followPosition.y}px, 0)`;
-    requestAnimationFrame(animateFollowLabel);
+
+    const settled =
+      Math.abs(followTarget.x - followPosition.x) < 0.1 &&
+      Math.abs(followTarget.y - followPosition.y) < 0.1;
+
+    if (settled && !trigger.classList.contains("is-following")) {
+      followAnimationFrame = 0;
+      return;
+    }
+
+    followAnimationFrame = requestAnimationFrame(animateFollowLabel);
+  }
+
+  function startFollowAnimation() {
+    if (!followAnimationFrame && hoverCapable.matches) {
+      followAnimationFrame = requestAnimationFrame(animateFollowLabel);
+    }
   }
 
   trigger.addEventListener("click", (event) => {
@@ -262,10 +304,6 @@ function setupIntroDisclosure() {
   });
 
   updateIntro();
-
-  if (hoverCapable.matches) {
-    animateFollowLabel();
-  }
 }
 
 setupIntroDisclosure();
@@ -351,8 +389,6 @@ async function setupWorkStage() {
   let touchStartPosition = null;
   let touchDragging = false;
   let touchTravel = 0;
-  let expandedSwipeHandled = false;
-  let expandedSwipeOffset = { x: 0, y: 0 };
   let suppressClick = false;
   let motionListening = false;
   let shakeListening = false;
@@ -380,14 +416,11 @@ async function setupWorkStage() {
     bottom: false,
   };
   let lastUserActivity = performance.now();
-  let frameExpanded = false;
   let caseStudyActive = false;
   let stageVideoBorrowed = false;
-  let expandedLockedPosition = null;
   let trailCursor = 0;
   let lastTrailTime = 0;
   let lastTrailPosition = null;
-  let lastTrailScale = 1;
   let idlePosition = null;
   let idleLastTime = performance.now();
   const idleSpeed = coarsePointer.matches ? 39 : 53;
@@ -414,15 +447,30 @@ async function setupWorkStage() {
     return compactVideo.matches ? project.mobileSrc : project.desktopSrc;
   }
 
-  const trailCanvases = reduceMotion
-    ? []
-    : Array.from({ length: trailPoolSize }, () => {
-        const canvas = document.createElement("canvas");
-        canvas.className = "video-trail";
-        canvas.setAttribute("aria-hidden", "true");
-        stage.insertBefore(canvas, frame);
-        return canvas;
-      });
+  let trailCanvases = [];
+
+  function ensureTrailPool() {
+    if (reduceMotion || trailCanvases.length > 0) {
+      return;
+    }
+
+    trailCanvases = Array.from({ length: trailPoolSize }, () => {
+      const canvas = document.createElement("canvas");
+      canvas.className = "video-trail";
+      canvas.setAttribute("aria-hidden", "true");
+      stage.insertBefore(canvas, frame);
+      return canvas;
+    });
+  }
+
+  ensureTrailPool();
+  reduceMotionQuery.addEventListener?.("change", () => {
+    if (reduceMotion) {
+      clearTrail();
+    } else {
+      ensureTrailPool();
+    }
+  });
 
   function hideLoading() {
     stage.classList.remove("is-loading");
@@ -441,8 +489,8 @@ async function setupWorkStage() {
   let previousFramePosition = { ...currentPosition };
   let previousFrameTime = performance.now();
   let frameVelocity = { ...idleVelocity };
-  let frameScale = 1;
-  let targetFrameScale = 1;
+  let frameSize = { width: 0, height: 0 };
+  let labelHeight = 0;
 
   function markUserActivity() {
     lastUserActivity = performance.now();
@@ -458,7 +506,7 @@ async function setupWorkStage() {
   }, { passive: true });
   window.addEventListener("keydown", markUserActivity);
 
-  function getMovementBounds(frameWidth = frame.offsetWidth, frameHeight = frame.offsetHeight) {
+  function getMovementBounds(frameWidth = frameSize.width, frameHeight = frameSize.height) {
     const minX = frameWidth / 2;
     const minY = frameHeight / 2;
 
@@ -513,7 +561,7 @@ async function setupWorkStage() {
       : source === "touch"
         ? 280
         : source === "pointer"
-          ? 140
+          ? 240
           : 720;
 
     if (now - lastDirectionalSwitch < switchGap) {
@@ -521,7 +569,7 @@ async function setupWorkStage() {
     }
 
     lastDirectionalSwitch = now;
-    switchVideo("ascending");
+    switchVideo("ascending", null, source !== "idle");
     return true;
   }
 
@@ -569,7 +617,7 @@ async function setupWorkStage() {
     // A new direction must persist across several samples so hand and sensor
     // jitter cannot be mistaken for intentional navigation.
     const requiredTravel = source === "gyro" ? 1.6 : source === "touch" ? 10 : 4;
-    const requiredSamples = source === "gyro" ? 4 : source === "pointer" ? 1 : 2;
+    const requiredSamples = source === "gyro" ? 4 : 2;
 
     if (
       directionTracking.candidateTravel < requiredTravel ||
@@ -678,7 +726,8 @@ async function setupWorkStage() {
     stage.dataset.projectIndex = String(project.order);
     stage.dataset.projectTitle = project.title;
     stage.dataset.projectSlug = project.slug;
-    frame.setAttribute("role", "link");
+    frame.setAttribute("role", "button");
+    frame.setAttribute("aria-haspopup", "dialog");
     frame.setAttribute("aria-label", `Open ${project.title} case study`);
     stage.setAttribute(
       "aria-label",
@@ -738,21 +787,11 @@ async function setupWorkStage() {
 
     frame.style.setProperty("--video-ratio", String(ratio));
     frame.style.width = `${width}px`;
-  }
-
-  function enlargedFrameScale() {
-    const frameWidth = Math.max(1, frame.offsetWidth);
-    const frameHeight = Math.max(1, frame.offsetHeight);
-    const preferredScale = coarsePointer.matches ? 1.5 : 1.65;
-    const fittingScale = Math.min(
-      stage.clientWidth / frameWidth,
-      stage.clientHeight / frameHeight
-    );
-
-    return Math.max(
-      1,
-      Math.min(preferredScale, fittingScale * 0.96)
-    );
+    frameSize = {
+      width: frame.offsetWidth,
+      height: frame.offsetHeight,
+    };
+    labelHeight = projectLabel.offsetHeight;
   }
 
   function loadVideo(slotIndex, projectIndex) {
@@ -858,7 +897,7 @@ async function setupWorkStage() {
     queuedReady = true;
 
     if (switchRequest?.projectIndex === projectIndex) {
-      switchVideo(switchRequest.mode, projectIndex);
+      switchVideo(switchRequest.mode, projectIndex, switchRequest.announce);
     }
   }
 
@@ -885,13 +924,14 @@ async function setupWorkStage() {
     queueInitialNextVideo();
   }
 
-  function switchVideo(mode = "ascending", requestedProjectIndex = null) {
+  function switchVideo(mode = "ascending", requestedProjectIndex = null, announce = false) {
     const desiredProjectIndex =
       requestedProjectIndex ?? projectIndexForMode(mode);
 
     if (!queuedReady || queuedProjectIndex !== desiredProjectIndex) {
-      switchRequest = { mode, projectIndex: desiredProjectIndex };
+      switchRequest = { mode, projectIndex: desiredProjectIndex, announce };
       initialQueueStarted = true;
+      stage.classList.add("is-awaiting");
 
       if (queuedProjectIndex !== desiredProjectIndex || !queuedLoading) {
         queueNextVideo(desiredProjectIndex);
@@ -906,13 +946,13 @@ async function setupWorkStage() {
     const incomingVideo = videos[incomingSlotIndex];
     const nextProject = projects[queuedProjectIndex];
     switchRequest = null;
+    stage.classList.remove("is-awaiting");
     queuedReady = false;
     activeSlotIndex = incomingSlotIndex;
     currentProjectIndex = queuedProjectIndex;
 
     setFrameRatio(incomingVideo);
     setProjectLabel(nextProject);
-    targetFrameScale = frameExpanded ? enlargedFrameScale() : 1;
 
     incomingVideo.classList.add("is-active");
     incomingVideo.setAttribute("aria-hidden", "false");
@@ -922,6 +962,11 @@ async function setupWorkStage() {
 
     playActiveVideo();
     announceActiveProject(nextProject);
+
+    if (announce) {
+      stageStatus.textContent = `${String(nextProject.order).padStart(2, "0")} ${nextProject.title}`;
+    }
+
     queueNextVideo(projectIndexForMode(mode));
   }
 
@@ -957,7 +1002,7 @@ async function setupWorkStage() {
 
     const now = performance.now();
 
-    if (!pointerActive || now - lastPointerInput > 500) {
+    if (!pointerActive || now - lastPointerInput > 3000) {
       pointerReentryTime = now;
     }
 
@@ -986,40 +1031,6 @@ async function setupWorkStage() {
       touchTravel += distance;
     }
 
-    if (frameExpanded) {
-      if (touchStartPosition && !expandedSwipeHandled) {
-        const deltaX = event.clientX - touchStartPosition.x;
-        const deltaY = event.clientY - touchStartPosition.y;
-        const horizontalDistance = Math.abs(deltaX);
-        const verticalDistance = Math.abs(deltaY);
-        const nudgeLimit = Math.max(
-          10,
-          Math.min(18, Math.min(stage.clientWidth, stage.clientHeight) * 0.045)
-        );
-        const swipeThreshold = Math.max(
-          42,
-          Math.min(64, Math.min(stage.clientWidth, stage.clientHeight) * 0.12)
-        );
-
-        expandedSwipeOffset = {
-          x: Math.max(-nudgeLimit, Math.min(nudgeLimit, deltaX * 0.16)),
-          y: Math.max(-nudgeLimit, Math.min(nudgeLimit, deltaY * 0.16)),
-        };
-
-        if (Math.max(horizontalDistance, verticalDistance) >= swipeThreshold) {
-          const forward = verticalDistance >= horizontalDistance
-            ? deltaY < 0
-            : deltaX < 0;
-
-          expandedSwipeHandled = true;
-          switchVideo(forward ? "ascending" : "descending");
-        }
-      }
-
-      touchPosition = { x: event.clientX, y: event.clientY };
-      return;
-    }
-
     updateTargetFromPoint(event.clientX, event.clientY);
     trackMovementDirection(deltaX, deltaY, "touch");
     touchPosition = { x: event.clientX, y: event.clientY };
@@ -1032,7 +1043,7 @@ async function setupWorkStage() {
 
     const now = performance.now();
 
-    if (!pointerActive || now - lastPointerInput > 500) {
+    if (!pointerActive || now - lastPointerInput > 3000) {
       pointerReentryTime = now;
     }
 
@@ -1074,17 +1085,12 @@ async function setupWorkStage() {
     touchDragging = true;
     pointerActive = true;
     touchTravel = 0;
-    expandedSwipeHandled = false;
     suppressClick = false;
     lastUserActivity = performance.now();
     touchPosition = { x: event.clientX, y: event.clientY };
     touchStartPosition = { ...touchPosition };
     resetDirectionTracking("touch");
-
-    if (!frameExpanded) {
-      updateTargetFromPoint(event.clientX, event.clientY);
-    }
-
+    updateTargetFromPoint(event.clientX, event.clientY);
     stage.setPointerCapture(event.pointerId);
   });
 
@@ -1098,7 +1104,6 @@ async function setupWorkStage() {
     lastUserActivity = performance.now();
     touchPosition = null;
     touchStartPosition = null;
-    expandedSwipeHandled = false;
     suppressClick = event.type !== "pointercancel" && touchTravel > 10;
 
     if (suppressClick) {
@@ -1153,7 +1158,9 @@ async function setupWorkStage() {
     switchVideo(
       event.key === "ArrowLeft" || event.key === "ArrowUp"
         ? "descending"
-        : "ascending"
+        : "ascending",
+      null,
+      true
     );
   });
 
@@ -1165,14 +1172,13 @@ async function setupWorkStage() {
     }
 
     caseStudyActive = Boolean(event.detail?.open) || caseStudyClosing;
-    frameExpanded = false;
-    targetFrameScale = 1;
     stage.classList.toggle("is-case-open", caseStudyActive);
     stage.classList.toggle("is-case-closing", caseStudyClosing);
 
     if (caseStudyActive) {
       pointerActive = false;
       touchDragging = false;
+      stage.classList.remove("is-awaiting");
       clearTrail();
     } else {
       const handoffTime = Number(event.detail?.currentTime);
@@ -1208,7 +1214,9 @@ async function setupWorkStage() {
       if (pointerPosition && !coarsePointer.matches) {
         pointerActive = true;
         lastPointerInput = resumedAt;
-        pointerReentryTime = resumedAt - 1100;
+        // Start the soft reacquire ramp from zero so the frame glides back to
+        // the cursor after a case study closes instead of lunging at it.
+        pointerReentryTime = resumedAt;
         updateTargetFromPoint(pointerPosition.x, pointerPosition.y);
         resetDirectionTracking("pointer");
       } else {
@@ -1283,7 +1291,6 @@ async function setupWorkStage() {
     if (
       !stageVisible ||
       caseStudyActive ||
-      (frameExpanded && coarsePointer.matches) ||
       touchDragging ||
       event.beta == null ||
       event.gamma == null
@@ -1309,10 +1316,7 @@ async function setupWorkStage() {
       x: Math.max(-maximumTilt, Math.min(maximumTilt, mapped.x)),
       y: Math.max(-maximumTilt, Math.min(maximumTilt, mapped.y)),
     };
-    const movementBounds = getMovementBounds(
-      frame.offsetWidth * frameScale,
-      frame.offsetHeight * frameScale
-    );
+    const movementBounds = getMovementBounds();
     const origin = clampPosition(motionOrigin || currentPosition, movementBounds);
     const normalizedTilt = {
       x: clamped.x / maximumTilt,
@@ -1367,7 +1371,7 @@ async function setupWorkStage() {
     motionListening = true;
 
     if (motionButton) {
-      motionButton.hidden = true;
+      motionButton.classList.add("is-hidden");
     }
   }
 
@@ -1421,7 +1425,7 @@ async function setupWorkStage() {
     shakeListening = true;
 
     if (motionButton) {
-      motionButton.hidden = true;
+      motionButton.classList.add("is-hidden");
     }
   }
 
@@ -1456,14 +1460,14 @@ async function setupWorkStage() {
         motionPermission !== "granted" &&
         motionButton
       ) {
-        motionButton.hidden = true;
+        motionButton.classList.add("is-hidden");
         stageStatus.textContent = "Motion access declined. Touch drag remains available.";
       }
     } catch (error) {
       console.error(error);
 
       if (motionButton) {
-        motionButton.hidden = true;
+        motionButton.classList.add("is-hidden");
       }
 
       stageStatus.textContent = "Motion access unavailable. Touch drag remains available.";
@@ -1503,24 +1507,13 @@ async function setupWorkStage() {
 
   function resetFramePosition() {
     setFrameRatio(videos[activeSlotIndex]);
-    targetFrameScale = frameExpanded ? enlargedFrameScale() : 1;
-    const targetBounds = getMovementBounds(
-      frame.offsetWidth * targetFrameScale,
-      frame.offsetHeight * targetFrameScale
-    );
+    const targetBounds = getMovementBounds();
 
-    currentPosition = frameExpanded && coarsePointer.matches
-      ? clampPosition(stageAnchor(), targetBounds)
-      : clampPosition(currentPosition, targetBounds);
+    currentPosition = clampPosition(currentPosition, targetBounds);
     targetPosition = { ...currentPosition };
     idlePosition = { ...currentPosition };
-    expandedLockedPosition = frameExpanded && coarsePointer.matches
-      ? clampPosition(stageAnchor(), targetBounds)
-      : null;
-    expandedSwipeOffset = { x: 0, y: 0 };
     idleLastTime = performance.now();
     lastTrailPosition = { ...currentPosition };
-    lastTrailScale = frameScale;
     previousFramePosition = { ...currentPosition };
     previousFrameTime = idleLastTime;
     frameVelocity = { ...idleVelocity };
@@ -1546,6 +1539,7 @@ async function setupWorkStage() {
     const activeVideo = videos[activeSlotIndex];
 
     if (
+      reduceMotion ||
       trailCanvases.length === 0 ||
       activeVideo.readyState < HTMLMediaElement.HAVE_CURRENT_DATA ||
       !activeVideo.videoWidth ||
@@ -1580,8 +1574,13 @@ async function setupWorkStage() {
       return;
     }
 
-    canvas.width = renderWidth;
-    canvas.height = renderHeight;
+    if (canvas.width !== renderWidth) {
+      canvas.width = renderWidth;
+    }
+
+    if (canvas.height !== renderHeight) {
+      canvas.height = renderHeight;
+    }
 
     try {
       context.drawImage(
@@ -1651,8 +1650,22 @@ async function setupWorkStage() {
 
   function clearTrail() {
     trailCanvases.forEach((canvas) => {
+      if (document.hidden) {
+        canvas.getAnimations().forEach((animation) => animation.cancel());
+        canvas.style.opacity = "0";
+        return;
+      }
+
+      const opacity = Number(window.getComputedStyle(canvas).opacity);
       canvas.getAnimations().forEach((animation) => animation.cancel());
       canvas.style.opacity = "0";
+
+      if (opacity > 0.001) {
+        canvas.animate(
+          [{ opacity }, { opacity: 0 }],
+          { duration: 250, easing: "ease-out", fill: "forwards" }
+        );
+      }
     });
   }
 
@@ -1725,78 +1738,50 @@ async function setupWorkStage() {
   }
 
   function animateFrame(now = performance.now()) {
-    const frameWidth = frame.offsetWidth;
-    const frameHeight = frame.offsetHeight;
+    // While the case-study overlay covers the stage there is nothing to move;
+    // skip the easing math and style writes until it closes.
+    if (caseStudyActive) {
+      previousFramePosition = { ...currentPosition };
+      previousFrameTime = now;
+      requestAnimationFrame(animateFrame);
+      return;
+    }
+
+    const frameWidth = frameSize.width;
+    const frameHeight = frameSize.height;
     const captionGap = 8;
     const captionEdgeInset = 8;
-    const scaleEasing = reduceMotion ? 1 : 0.085;
-
-    frameScale += (targetFrameScale - frameScale) * scaleEasing;
-
-    if (Math.abs(targetFrameScale - frameScale) < 0.001) {
-      frameScale = targetFrameScale;
-    }
-
-    const visibleFrameWidth = frameWidth * frameScale;
-    const visibleFrameHeight = frameHeight * frameScale;
-    const bounds = getMovementBounds(visibleFrameWidth, visibleFrameHeight);
+    const bounds = getMovementBounds(frameWidth, frameHeight);
     const center = clampPosition(stageAnchor(), bounds);
-    const mobileExpanded = frameExpanded && coarsePointer.matches;
-
-    if (mobileExpanded && !touchDragging) {
-      const nudgeReturnEasing = reduceMotion ? 1 : 0.16;
-      expandedSwipeOffset.x += (0 - expandedSwipeOffset.x) * nudgeReturnEasing;
-      expandedSwipeOffset.y += (0 - expandedSwipeOffset.y) * nudgeReturnEasing;
-
-      if (Math.hypot(expandedSwipeOffset.x, expandedSwipeOffset.y) < 0.1) {
-        expandedSwipeOffset = { x: 0, y: 0 };
-      }
-    }
-
     const pointerOverride =
-      !mobileExpanded &&
-      (touchDragging || (pointerActive && now - lastPointerInput < 3000));
+      touchDragging || (pointerActive && now - lastPointerInput < 3000);
     const motionOverride =
-      !mobileExpanded && !pointerOverride && motionListening && lastMotionInput > 0;
+      !pointerOverride && motionListening && lastMotionInput > 0;
     const inputOverride = pointerOverride || motionOverride;
     const pointerReentryProgress = Math.min(
       1,
       Math.max(0, now - pointerReentryTime) / 1100
     );
     const pointerEasing = 0.035 + pointerReentryProgress * 0.085;
-    const desired = caseStudyActive
-      ? currentPosition
-      : reduceMotion
+    const desired = reduceMotion
       ? center
-      : mobileExpanded
-        ? {
-            x: (expandedLockedPosition || center).x + expandedSwipeOffset.x,
-            y: (expandedLockedPosition || center).y + expandedSwipeOffset.y,
-          }
-        : inputOverride
-          ? targetPosition
-          : advanceIdlePosition(now, bounds);
+      : inputOverride
+        ? targetPosition
+        : advanceIdlePosition(now, bounds);
     const clampedTarget = clampPosition(desired, bounds);
-    const scaleTransitioning = Math.abs(targetFrameScale - frameScale) >= 0.001;
     const easing = reduceMotion
       ? 1
-      : mobileExpanded
-        ? scaleTransitioning
-          ? 0.14
-          : 1
-        : inputOverride
-          ? pointerOverride
-            ? pointerEasing
-            : 0.085
-          : scaleTransitioning
-            ? 0.14
-            : 1;
+      : inputOverride
+        ? pointerOverride
+          ? pointerEasing
+          : 0.085
+        : 1;
 
     currentPosition.x += (clampedTarget.x - currentPosition.x) * easing;
     currentPosition.y += (clampedTarget.y - currentPosition.y) * easing;
     currentPosition = clampPosition(currentPosition, bounds);
 
-    if (inputOverride || mobileExpanded) {
+    if (inputOverride) {
       idlePosition = { ...currentPosition };
       idleLastTime = now;
       idleNextSteerTime = now;
@@ -1810,25 +1795,25 @@ async function setupWorkStage() {
       x: (currentPosition.x - previousFramePosition.x) / frameDeltaTime,
       y: (currentPosition.y - previousFramePosition.y) / frameDeltaTime,
     };
-    const velocityEasing = inputOverride || mobileExpanded ? 0.28 : 0.42;
+    const velocityEasing = inputOverride ? 0.28 : 0.42;
 
     frameVelocity.x += (rawVelocity.x - frameVelocity.x) * velocityEasing;
     frameVelocity.y += (rawVelocity.y - frameVelocity.y) * velocityEasing;
     previousFramePosition = { ...currentPosition };
     previousFrameTime = now;
 
-    frame.style.transform = `translate3d(${currentPosition.x - visibleFrameWidth / 2}px, ${
-      currentPosition.y - visibleFrameHeight / 2
-    }px, 0) scale(${frameScale})`;
-    const preferredLabelY = currentPosition.y + visibleFrameHeight / 2 + captionGap;
+    frame.style.transform = `translate3d(${currentPosition.x - frameWidth / 2}px, ${
+      currentPosition.y - frameHeight / 2
+    }px, 0)`;
+    const preferredLabelY = currentPosition.y + frameHeight / 2 + captionGap;
     const maximumLabelY = Math.max(
       captionEdgeInset,
-      stage.clientHeight - projectLabel.offsetHeight - captionEdgeInset
+      stage.clientHeight - labelHeight - captionEdgeInset
     );
     const labelY = Math.min(preferredLabelY, maximumLabelY);
 
-    projectLabel.style.maxWidth = `${visibleFrameWidth}px`;
-    projectLabel.style.transform = `translate3d(${currentPosition.x - visibleFrameWidth / 2}px, ${
+    projectLabel.style.maxWidth = `${frameWidth}px`;
+    projectLabel.style.transform = `translate3d(${currentPosition.x - frameWidth / 2}px, ${
       labelY
     }px, 0)`;
 
@@ -1840,7 +1825,6 @@ async function setupWorkStage() {
       currentPosition.x - lastTrailPosition.x,
       currentPosition.y - lastTrailPosition.y
     );
-    const scaleDistanceSinceTrail = Math.abs(frameScale - lastTrailScale) * frameWidth;
     const idleTrailProgress = inputOverride
       ? 0
       : Math.min(1, Math.max(0, now - lastUserActivity) / idleTrailRampDuration);
@@ -1859,12 +1843,10 @@ async function setupWorkStage() {
 
     if (
       stageVisible &&
-      !caseStudyActive &&
-      !mobileExpanded &&
       now - lastTrailTime >= trailInterval &&
-      (distanceSinceTrail >= trailDistance || scaleDistanceSinceTrail >= trailDistance)
+      distanceSinceTrail >= trailDistance
     ) {
-      emitTrail(visibleFrameWidth, visibleFrameHeight, {
+      emitTrail(frameWidth, frameHeight, {
         velocity: frameVelocity,
         startOpacity: inputOverride ? 0.2 : 0.11 + idleTrailGrowth * 0.015,
         middleOpacity: inputOverride ? 0.075 : 0.035 + idleTrailGrowth * 0.01,
@@ -1874,7 +1856,6 @@ async function setupWorkStage() {
       });
       lastTrailTime = now;
       lastTrailPosition = { ...currentPosition };
-      lastTrailScale = frameScale;
     }
 
     requestAnimationFrame(animateFrame);
@@ -1903,6 +1884,23 @@ async function setupWorkStage() {
     }
 
     playActiveVideo();
+  });
+
+  // Low Power Mode (and similar policies) block autoplay until a user gesture.
+  // These capture-phase listeners carry user activation, so the first tap or
+  // key press anywhere restores playback without any visible affordance.
+  function retryBlockedPlayback() {
+    if (caseStudyActive || document.hidden || !stageVisible) {
+      return;
+    }
+
+    if (videos[activeSlotIndex].paused) {
+      playActiveVideo();
+    }
+  }
+
+  ["pointerdown", "touchstart", "keydown"].forEach((type) => {
+    window.addEventListener(type, retryBlockedPlayback, { capture: true, passive: true });
   });
 
   const initialProjectSlug = document.body.dataset.initialProject;

@@ -79,10 +79,24 @@ At the centre of the identity was a custom research and asset-generation tool I 
       data-inactive-href="./assets/favicon-inactive.svg?v=3"
     >
     <link rel="apple-touch-icon" href="./apple-touch-icon.png">
-    <link rel="preload" href="./assets/fonts/ABCDiatype-Regular.otf" as="font" type="font/otf" crossorigin>
-    <link rel="stylesheet" href="./css/style.css?v=90">
-    <script src="./js/app.js?v=51" defer></script>
-    <script src="./js/case-study.js?v=49" defer></script>
+    <link rel="preload" href="./assets/fonts/ABCDiatype-Regular.woff2" as="font" type="font/woff2" crossorigin>
+    <script>
+      try {
+        if (sessionStorage.getItem("kozi-theme-inverted") === "true") {
+          document.documentElement.classList.add("theme-inverted");
+        }
+      } catch (error) {}
+    </script>
+    <link rel="stylesheet" href="./css/style.css?v=92">
+    <noscript>
+      <style>
+        body::after {
+          content: none !important;
+        }
+      </style>
+    </noscript>
+    <script src="./js/app.js?v=53" defer></script>
+    <script src="./js/case-study.js?v=52" defer></script>
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",
@@ -123,11 +137,11 @@ At the centre of the identity was a custom research and asset-generation tool I 
         <div class="intro-details-wrap" id="intro-details" aria-hidden="true" inert>
           <div class="intro-details">
             <nav class="about-links" aria-label="External links">
-              <a class="detail-reveal" href="https://www.instagram.com/kozi.studio/" target="_blank" rel="noopener">IG&#xE04E;&#xFE0E;</a>
-              <a class="detail-reveal" href="https://www.are.na/albert-kozikowski" target="_blank" rel="noopener">Arena&#xE04E;&#xFE0E;</a>
-              <a class="detail-reveal" href="https://thisoneiseasytospell.github.io/KOZI-Playground/" target="_blank" rel="noopener">Vibes&#xE04E;&#xFE0E;</a>
-              <a class="detail-reveal" href="https://twitter.com/thisonealbert" target="_blank" rel="noopener">Twitter&#xE04E;&#xFE0E;</a>
-              <a class="detail-reveal" href="https://open.spotify.com/playlist/3cdGbWLdUkFmgCApCDmnl5?si=49cd8455777a414f" target="_blank" rel="noopener">Spotify&#xE04E;&#xFE0E;</a>
+              <a class="detail-reveal" href="https://www.instagram.com/kozi.studio/" target="_blank" rel="noopener">IG&nbsp;<span class="link-arrow" aria-hidden="true">&#x2197;</span></a>
+              <a class="detail-reveal" href="https://www.are.na/albert-kozikowski" target="_blank" rel="noopener">Arena&nbsp;<span class="link-arrow" aria-hidden="true">&#x2197;</span></a>
+              <a class="detail-reveal" href="https://thisoneiseasytospell.github.io/KOZI-Playground/" target="_blank" rel="noopener">Vibes&nbsp;<span class="link-arrow" aria-hidden="true">&#x2197;</span></a>
+              <a class="detail-reveal" href="https://twitter.com/thisonealbert" target="_blank" rel="noopener">Twitter&nbsp;<span class="link-arrow" aria-hidden="true">&#x2197;</span></a>
+              <a class="detail-reveal" href="https://open.spotify.com/playlist/3cdGbWLdUkFmgCApCDmnl5?si=49cd8455777a414f" target="_blank" rel="noopener">Spotify&nbsp;<span class="link-arrow" aria-hidden="true">&#x2197;</span></a>
             </nav>
 
             <p class="detail-reveal">kozikowskialbert(at)gmail.com</p>
@@ -169,18 +183,18 @@ At the centre of the identity was a custom research and asset-generation tool I 
       <section class="work-stage is-loading" id="work" aria-label="Selected work" aria-busy="true">
         <h2 class="visually-hidden">Selected work</h2>
 
-        <div class="video-frame" data-video-frame role="link" tabindex="0">
+        <div class="video-frame" data-video-frame role="button" aria-haspopup="dialog" tabindex="0">
           <video class="work-video is-active" muted playsinline preload="metadata"></video>
           <video class="work-video" muted playsinline preload="metadata"></video>
         </div>
 
-        <p class="project-label" data-project-label aria-live="polite">
+        <p class="project-label" data-project-label>
           <span data-project-number></span>
           <span data-project-title></span>
         </p>
 
         <p class="video-loading" data-video-loading role="status">Loading&hellip;</p>
-        <button class="motion-permission" type="button" hidden>Enable motion</button>
+        <button class="motion-permission" type="button" hidden>Enable gyro</button>
         <p class="visually-hidden" data-stage-status aria-live="polite"></p>
       </section>
     </main>

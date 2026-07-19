@@ -41,6 +41,8 @@ if (
   setupCaseStudies().catch((error) => {
     console.error(error);
     caseStatus.textContent = "Case studies are unavailable.";
+    // Lift the deep-link boot veil so a data failure still leaves a usable page.
+    document.body.classList.add("case-boot-done");
   });
 }
 
@@ -48,8 +50,21 @@ async function setupCaseStudies() {
   const accordionCollapseDuration = 160;
   const accordionExpandDuration = 280;
   const caseScrollDuration = 240;
-  const reduceCaseMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const reduceCaseMotionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+  let reduceCaseMotion = reduceCaseMotionQuery.matches;
+
+  reduceCaseMotionQuery.addEventListener?.("change", () => {
+    reduceCaseMotion = reduceCaseMotionQuery.matches;
+  });
+
   const compactCaseMedia = window.matchMedia("(max-width: 760px), (hover: none), (pointer: coarse)");
+  const rootMotionStyles = window.getComputedStyle(document.documentElement);
+  const ghostOpenEase =
+    rootMotionStyles.getPropertyValue("--reveal-ease").trim() ||
+    "cubic-bezier(0.19, 1, 0.22, 1)";
+  const ghostCloseEase =
+    rootMotionStyles.getPropertyValue("--intro-collapse-ease").trim() ||
+    "cubic-bezier(0.65, 0, 0.35, 1)";
   const response = await fetch("/assets/projects/index.json?v=5");
 
   if (!response.ok) {
@@ -103,6 +118,7 @@ async function setupCaseStudies() {
       })
     : null;
   let closeAfterHistoryChange = false;
+  let isNavigatingClose = false;
   let ghostAnimation = null;
   let borrowedStageVideo = null;
   let scrollAnimationFrame = 0;
@@ -311,6 +327,17 @@ async function setupCaseStudies() {
         region.removeAttribute("aria-hidden");
       }
     });
+  }
+
+  function setLayerGhosting(active) {
+    caseStudyLayer.classList.toggle("is-ghosting", active);
+    // Mirror the CSS pointer-events block for keyboard users: project links
+    // must not be activatable while the transition ghost is in flight.
+    caseProjectList
+      .querySelectorAll(".case-study-project-link")
+      .forEach((link) => {
+        link.inert = active;
+      });
   }
 
   function shouldVideoPlay(video) {
@@ -1215,6 +1242,102 @@ async function setupCaseStudies() {
     setupVideoObserver();
   });
 
+  function attachGhostPoster(ghost, sourceVideo, ghostVideo) {
+    if (sourceVideo.readyState < HTMLMediaElement.HAVE_CURRENT_DATA) {
+      return;
+    }
+
+    const poster = document.createElement("canvas");
+    poster.width = sourceVideo.videoWidth || 16;
+    poster.height = sourceVideo.videoHeight || 9;
+
+    try {
+      const context = poster.getContext("2d");
+
+      if (!context) {
+        return;
+      }
+
+      context.drawImage(sourceVideo, 0, 0, poster.width, poster.height);
+    } catch {
+      return;
+    }
+
+    // Sits above the ghost's own video and bridges its load time with the
+    // source's current frame, so the flight never starts on a blank frame.
+    Object.assign(poster.style, {
+      height: "calc(100% + 2px)",
+      inset: "-1px",
+      objectFit: "cover",
+      position: "absolute",
+      width: "calc(100% + 2px)",
+    });
+    ghost.append(poster);
+
+    const revealGhostVideo = () => poster.remove();
+
+    if (typeof ghostVideo.requestVideoFrameCallback === "function") {
+      ghostVideo.requestVideoFrameCallback(revealGhostVideo);
+    } else {
+      ghostVideo.addEventListener("timeupdate", revealGhostVideo, { once: true });
+    }
+  }
+
+  function settleGhost(ghost, duration) {
+    const settled = caseHero.getBoundingClientRect();
+    const ghostRect = ghost.getBoundingClientRect();
+    const scaleX = settled.width / Math.max(1, ghostRect.width);
+    const scaleY = settled.height / Math.max(1, ghostRect.height);
+    const deltaX = settled.left - ghostRect.left;
+    const deltaY = settled.top - ghostRect.top;
+
+    // Dissolve the flight shadow so removing the ghost has no visual delta.
+    ghost.style.transition = `box-shadow ${duration}ms linear`;
+    ghost.style.boxShadow = "0 12px 48px rgb(0 0 0 / 0)";
+
+    // Glide out any residual offset between the predicted landing rect and
+    // where the hero actually settled (late layout shifts, rounding).
+    if (
+      Math.abs(deltaX) > 0.5 ||
+      Math.abs(deltaY) > 0.5 ||
+      Math.abs(scaleX - 1) > 0.002 ||
+      Math.abs(scaleY - 1) > 0.002
+    ) {
+      ghost.animate(
+        [
+          { transform: "translate3d(0, 0, 0) scale(1, 1)" },
+          { transform: `translate3d(${deltaX}px, ${deltaY}px, 0) scale(${scaleX}, ${scaleY})` },
+        ],
+        { duration, easing: "ease-out", fill: "forwards" }
+      );
+    }
+  }
+
+  function finalHeroRect() {
+    const heroRect = caseHero.getBoundingClientRect();
+    const dialogRect = caseStudyDialog.getBoundingClientRect();
+    const dialogWidth = caseStudyDialog.offsetWidth;
+    const dialogHeight = caseStudyDialog.offsetHeight;
+    const scale = dialogWidth > 0 ? dialogRect.width / dialogWidth : 1;
+
+    if (!Number.isFinite(scale) || scale <= 0) {
+      return heroRect;
+    }
+
+    // The dialog is still translating/scaling in while this runs; project the
+    // hero's rect onto the dialog's settled (centered, scale 1) geometry so
+    // the ghost lands exactly where the hero will actually sit.
+    const finalLeft = (window.innerWidth - dialogWidth) / 2;
+    const finalTop = (window.innerHeight - dialogHeight) / 2;
+
+    return {
+      left: finalLeft + (heroRect.left - dialogRect.left) / scale,
+      top: finalTop + (heroRect.top - dialogRect.top) / scale,
+      width: heroRect.width / scale,
+      height: heroRect.height / scale,
+    };
+  }
+
   function transformRectToBase(rect, base) {
     const translateX = rect.left - base.left;
     const translateY = rect.top - base.top;
@@ -1226,14 +1349,14 @@ async function setupCaseStudies() {
 
   async function animateThumbnailIntoHero(origin) {
     if (!origin?.frame || !origin?.video || !origin.video.currentSrc) {
-      caseStudyLayer.classList.remove("is-ghosting");
+      setLayerGhosting(false);
       syncVideoPlayback(caseHeroVideo);
       return;
     }
 
     await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
     const start = origin.frame.getBoundingClientRect();
-    const end = caseHero.getBoundingClientRect();
+    const end = finalHeroRect();
     const reuseOriginVideo = origin.reuseVideo === true;
 
     if (reuseOriginVideo) {
@@ -1242,7 +1365,7 @@ async function setupCaseStudies() {
       const nextSibling = video.nextSibling;
 
       if (!parent) {
-        caseStudyLayer.classList.remove("is-ghosting");
+        setLayerGhosting(false);
         caseHeroVideo.hidden = false;
         syncVideoPlayback(caseHeroVideo);
         return;
@@ -1274,7 +1397,7 @@ async function setupCaseStudies() {
       ) {
         caseHero.append(video);
         video.play().catch(() => {});
-        caseStudyLayer.classList.remove("is-ghosting");
+        setLayerGhosting(false);
         setupVideoObserver();
         syncVideoPlayback(video);
         return;
@@ -1306,7 +1429,7 @@ async function setupCaseStudies() {
         ],
         {
           duration: compactCaseMedia.matches ? 620 : 820,
-          easing: "cubic-bezier(0.19, 1, 0.22, 1)",
+          easing: ghostOpenEase,
           fill: "forwards",
         }
       );
@@ -1327,22 +1450,32 @@ async function setupCaseStudies() {
       }
 
       ghostAnimation = null;
+      // Fade the hero container back in while the ghost still covers it, then
+      // swap the video into the hero in a single frame so playback never dips.
+      setLayerGhosting(false);
+      settleGhost(ghost, 200);
+      await new Promise((resolve) => window.setTimeout(resolve, 200));
+
+      if (borrowedStageVideo?.video !== video || !ghost.isConnected) {
+        ghost.remove();
+        return;
+      }
+
       caseHero.append(video);
       ghost.remove();
-      caseStudyLayer.classList.remove("is-ghosting");
       setupVideoObserver();
       syncVideoPlayback(video);
       return;
     }
 
     if (reduceCaseMotion) {
-      caseStudyLayer.classList.remove("is-ghosting");
+      setLayerGhosting(false);
       syncVideoPlayback(caseHeroVideo);
       return;
     }
 
     if (start.width < 1 || start.height < 1 || end.width < 1 || end.height < 1) {
-      caseStudyLayer.classList.remove("is-ghosting");
+      setLayerGhosting(false);
       syncVideoPlayback(caseHeroVideo);
       return;
     }
@@ -1365,6 +1498,7 @@ async function setupCaseStudies() {
     video.preload = "auto";
     setHeroTime(video, origin.currentTime || origin.video.currentTime || 0);
     ghost.append(video);
+    attachGhostPoster(ghost, origin.video, video);
     document.body.append(ghost);
     video.play().catch(() => {});
 
@@ -1381,7 +1515,7 @@ async function setupCaseStudies() {
       ],
       {
         duration: compactCaseMedia.matches ? 620 : 820,
-        easing: "cubic-bezier(0.19, 1, 0.22, 1)",
+        easing: ghostOpenEase,
         fill: "forwards",
       }
     );
@@ -1399,9 +1533,10 @@ async function setupCaseStudies() {
     }
 
     ghostAnimation = null;
-    caseStudyLayer.classList.remove("is-ghosting");
+    setLayerGhosting(false);
     syncVideoPlayback(caseHeroVideo);
     const handoffDelay = compactCaseMedia.matches ? 140 : 190;
+    settleGhost(ghost, handoffDelay);
     await new Promise((resolve) => window.setTimeout(resolve, handoffDelay));
     ghost.remove();
   }
@@ -1442,7 +1577,7 @@ async function setupCaseStudies() {
       ghost.append(video);
       document.body.append(ghost);
       video.play().catch(() => {});
-      caseStudyLayer.classList.add("is-ghosting");
+      setLayerGhosting(true);
       const animation = ghost.animate(
         [
           {
@@ -1456,7 +1591,7 @@ async function setupCaseStudies() {
         ],
         {
           duration: compactCaseMedia.matches ? 520 : 720,
-          easing: "cubic-bezier(0.65, 0, 0.35, 1)",
+          easing: ghostCloseEase,
           fill: "forwards",
         }
       );
@@ -1516,9 +1651,10 @@ async function setupCaseStudies() {
     video.preload = "auto";
     setHeroTime(video, caseHeroVideo.currentTime || 0);
     ghost.append(video);
+    attachGhostPoster(ghost, caseHeroVideo, video);
     document.body.append(ghost);
     video.play().catch(() => {});
-    caseStudyLayer.classList.add("is-ghosting");
+    setLayerGhosting(true);
     const animation = ghost.animate(
       [
         {
@@ -1532,7 +1668,7 @@ async function setupCaseStudies() {
       ],
       {
         duration: compactCaseMedia.matches ? 520 : 720,
-        easing: "cubic-bezier(0.65, 0, 0.35, 1)",
+        easing: ghostCloseEase,
         fill: "forwards",
       }
     );
@@ -1551,9 +1687,9 @@ async function setupCaseStudies() {
     caseStudyScroll.scrollTop = 0;
     shuffleProjectHoverColors();
     caseStudyLayer.hidden = false;
-    caseStudyLayer.classList.remove("is-closing");
+    caseStudyLayer.classList.remove("is-closing", "is-closing-ghosted");
     caseStudyLayer.setAttribute("aria-hidden", "false");
-    caseStudyLayer.classList.toggle("is-ghosting", Boolean(origin) && !reduceCaseMotion);
+    setLayerGhosting(Boolean(origin) && !reduceCaseMotion);
     caseStudyDialog.setAttribute("aria-busy", "true");
     setBackgroundInert(true);
     window.dispatchEvent(new CustomEvent("kozi:casestudystate", {
@@ -1733,7 +1869,8 @@ async function setupCaseStudies() {
     caseStudyDialog.removeAttribute("aria-labelledby");
     caseStudyDialog.setAttribute("aria-label", "Selected work");
     caseStudyDialog.removeAttribute("aria-busy");
-    caseStudyLayer.classList.remove("is-switching", "is-ghosting");
+    caseStudyLayer.classList.remove("is-switching");
+    setLayerGhosting(false);
     updateWorkMetadata();
 
     if (!alreadyOpen) {
@@ -1798,6 +1935,8 @@ async function setupCaseStudies() {
       }
 
       caseStatus.textContent = "This case study could not be loaded.";
+      // A failed deep-link open must not leave the boot veil covering the page.
+      document.body.classList.add("case-boot-done");
       return;
     }
 
@@ -1840,7 +1979,7 @@ async function setupCaseStudies() {
         reuseVideo: useOriginVideo,
       });
     } else {
-      caseStudyLayer.classList.remove("is-ghosting");
+      setLayerGhosting(false);
     }
 
     if (replacingProject) {
@@ -1880,14 +2019,20 @@ async function setupCaseStudies() {
     videoObserver?.disconnect();
     visibleVideos.clear();
     caseStudyLayer.classList.add("is-closing");
+    caseStudyLayer.classList.toggle("is-closing-ghosted", Boolean(reverseAnimation));
     caseStudyLayer.classList.remove("is-open", "is-switching");
     caseStudyDialog.removeAttribute("aria-busy");
 
     if (!reverseAnimation) {
-      caseStudyLayer.classList.remove("is-ghosting");
+      setLayerGhosting(false);
     }
-    caseStudyLayer.setAttribute("aria-hidden", "true");
     setBackgroundInert(false);
+
+    if (restoreFocus && lastFocusedElement?.isConnected) {
+      lastFocusedElement.focus({ preventScroll: true });
+    }
+
+    caseStudyLayer.setAttribute("aria-hidden", "true");
     updateMetadata();
     window.dispatchEvent(new CustomEvent("kozi:casestudystate", {
       detail: {
@@ -1913,37 +2058,76 @@ async function setupCaseStudies() {
       }
 
       caseStudyLayer.hidden = true;
-      caseStudyLayer.classList.remove("is-closing", "is-ghosting");
+      caseStudyLayer.classList.remove("is-closing", "is-closing-ghosted");
+      setLayerGhosting(false);
+      document.body.classList.add("case-boot-done");
       activeSlug = null;
       activeProject = null;
       openedFromWorkIndex = false;
-
-      if (restoreFocus && lastFocusedElement?.isConnected) {
-        lastFocusedElement.focus({ preventScroll: true });
-      }
-
       caseStatus.textContent = "Case study closed.";
     };
 
     if (reduceCaseMotion) {
       finalize();
-    } else {
-      window.setTimeout(finalize, 1050);
+      return;
     }
+
+    // Hide the layer when its closing transitions actually settle (dialog
+    // opacity and backdrop tint are the two longest-running), with a timeout
+    // backstop in case an event never fires.
+    let finalized = false;
+    const settling = new Set(["dialog", "backdrop"]);
+    const settle = (part) => {
+      if (finalized) {
+        return;
+      }
+
+      settling.delete(part);
+
+      if (settling.size === 0) {
+        finalized = true;
+        caseStudyDialog.removeEventListener("transitionend", onDialogSettled);
+        caseStudyBackdrop.removeEventListener("transitionend", onBackdropSettled);
+        finalize();
+      }
+    };
+    const onDialogSettled = (event) => {
+      if (event.target === caseStudyDialog && event.propertyName === "opacity") {
+        settle("dialog");
+      }
+    };
+    const onBackdropSettled = (event) => {
+      if (event.target === caseStudyBackdrop && event.propertyName === "background-color") {
+        settle("backdrop");
+      }
+    };
+
+    caseStudyDialog.addEventListener("transitionend", onDialogSettled);
+    caseStudyBackdrop.addEventListener("transitionend", onBackdropSettled);
+    window.setTimeout(() => {
+      if (!finalized) {
+        finalized = true;
+        caseStudyDialog.removeEventListener("transitionend", onDialogSettled);
+        caseStudyBackdrop.removeEventListener("transitionend", onBackdropSettled);
+        finalize();
+      }
+    }, 1200);
   }
 
   function closeProject() {
-    if (!isOpen) {
+    if (!isOpen || isNavigatingClose) {
       return;
     }
 
     if (openedFromHomepage && caseHistoryDepth > 0) {
       closeAfterHistoryChange = true;
+      isNavigatingClose = true;
       history.go(-caseHistoryDepth);
       return;
     }
 
     if (openedFromWorkIndex && caseHistoryDepth > 0) {
+      isNavigatingClose = true;
       history.go(-caseHistoryDepth);
       return;
     }
@@ -1999,7 +2183,11 @@ async function setupCaseStudies() {
 
     if (event.key === "Escape") {
       event.preventDefault();
-      closeProject();
+
+      if (!event.repeat) {
+        closeProject();
+      }
+
       return;
     }
 
@@ -2011,7 +2199,12 @@ async function setupCaseStudies() {
       caseStudyDialog.querySelectorAll(
         'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])'
       )
-    ).filter((element) => !element.hidden && element.offsetParent !== null);
+    ).filter((element) =>
+      !element.hidden &&
+      element.offsetParent !== null &&
+      !element.closest("[inert]") &&
+      element.getClientRects().length > 0
+    );
 
     if (focusable.length === 0) {
       event.preventDefault();
@@ -2054,6 +2247,7 @@ async function setupCaseStudies() {
 
   window.addEventListener("popstate", (event) => {
     const slug = slugFromLocation();
+    isNavigatingClose = false;
 
     if (closeAfterHistoryChange) {
       closeAfterHistoryChange = false;
@@ -2082,6 +2276,28 @@ async function setupCaseStudies() {
 
   document.addEventListener("visibilitychange", () => {
     caseStudyDialog.querySelectorAll("video").forEach(syncVideoPlayback);
+  });
+
+  // Autoplay can be blocked (e.g. iOS Low Power Mode) until a user gesture;
+  // capture-phase listeners carry the activation needed for play() to succeed.
+  function retryBlockedCasePlayback() {
+    if (!isOpen || document.hidden) {
+      return;
+    }
+
+    caseStudyDialog.querySelectorAll("video").forEach((video) => {
+      if (video.paused) {
+        syncVideoPlayback(video);
+      }
+    });
+
+    if (borrowedStageVideo?.video?.paused) {
+      syncVideoPlayback(borrowedStageVideo.video);
+    }
+  }
+
+  ["pointerdown", "touchstart", "keydown"].forEach((type) => {
+    window.addEventListener(type, retryBlockedCasePlayback, { capture: true, passive: true });
   });
 
   window.addEventListener("resize", () => {
