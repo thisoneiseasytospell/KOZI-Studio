@@ -373,7 +373,6 @@ dd {
   background: transparent;
   border: 0;
   color: var(--text);
-  cursor: pointer;
   font: inherit;
   font-variant-numeric: tabular-nums;
   line-height: inherit;
@@ -642,6 +641,7 @@ main {
 
   .intro-shell {
     -webkit-overflow-scrolling: touch;
+    border-radius: 0;
     max-height: 100svh;
     overflow-anchor: none;
     overflow-x: hidden;
@@ -649,6 +649,7 @@ main {
     overscroll-behavior: contain;
     scrollbar-width: none;
     touch-action: pan-y;
+    width: 100vw;
   }
 
   .intro-shell::-webkit-scrollbar {
@@ -692,6 +693,7 @@ main {
 
   .intro-trigger {
     padding-bottom: 0;
+    width: 100%;
   }
 
   .motion-permission {
@@ -706,6 +708,10 @@ main {
 
   .intro-collapse {
     min-height: 32px;
+  }
+
+  .rtm-clock {
+    font-size: 0.9em;
   }
 
 }

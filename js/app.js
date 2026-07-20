@@ -104,9 +104,8 @@ function setupRtmClock() {
   const time = clock?.querySelector("[data-rtm-time]");
   const hour = clock?.querySelector("[data-rtm-hour]");
   const minute = clock?.querySelector("[data-rtm-minute]");
-  const period = clock?.querySelector("[data-rtm-period]");
 
-  if (!clock || !time || !hour || !minute || !period) {
+  if (!clock || !time || !hour || !minute) {
     return;
   }
 
@@ -117,7 +116,6 @@ function setupRtmClock() {
     hourCycle: "h23",
   });
   let clockTimer = 0;
-  let useTwentyFourHour = false;
 
   function updateClock() {
     const now = new Date();
@@ -127,25 +125,14 @@ function setupRtmClock() {
         .filter((part) => part.type !== "literal")
         .map((part) => [part.type, part.value])
     );
-    const twentyFourHour = Number(parts.hour);
-    const displayHour = useTwentyFourHour
-      ? parts.hour
-      : String(twentyFourHour % 12).padStart(2, "0");
     const displayMinute = parts.minute;
-    const displayPeriod = twentyFourHour < 12 ? "am" : "pm";
-    const accessibleHour = twentyFourHour % 12 || 12;
 
-    hour.textContent = displayHour;
+    hour.textContent = parts.hour;
     minute.textContent = displayMinute;
-    period.textContent = displayPeriod;
-    period.hidden = useTwentyFourHour;
     time.dateTime = now.toISOString();
-    clock.setAttribute("aria-pressed", String(useTwentyFourHour));
     clock.setAttribute(
       "aria-label",
-      useTwentyFourHour
-        ? `Rotterdam time ${parts.hour}:${displayMinute}, switch to 12-hour clock`
-        : `Rotterdam time ${accessibleHour}:${displayMinute} ${displayPeriod.toUpperCase()}, switch to 24-hour clock`
+      `Rotterdam time ${parts.hour}:${displayMinute}`
     );
 
     window.clearTimeout(clockTimer);
@@ -159,10 +146,6 @@ function setupRtmClock() {
     if (!document.hidden) {
       updateClock();
     }
-  });
-  clock.addEventListener("click", () => {
-    useTwentyFourHour = !useTwentyFourHour;
-    updateClock();
   });
   updateClock();
 }
