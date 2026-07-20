@@ -166,7 +166,7 @@ dd {
   -webkit-backdrop-filter: blur(8px);
   backdrop-filter: blur(8px);
   background: rgb(var(--bg-rgb) / 0.58);
-  border-radius: 0 0 24px 0;
+  border-radius: 0;
   max-width: 100vw;
   overflow: hidden;
   padding: var(--glass-pad);
@@ -641,7 +641,6 @@ main {
 
   .intro-shell {
     -webkit-overflow-scrolling: touch;
-    border-radius: 0;
     max-height: 100svh;
     overflow-anchor: none;
     overflow-x: hidden;
