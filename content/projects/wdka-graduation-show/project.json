@@ -91,9 +91,7 @@
       "poster": "/assets/projects/wdka-graduation-show/flag-studio-mobile-demo-poster.webp",
       "alt": "Demonstration of the interactive WdKA Flag Studio workflow",
       "aspectRatio": "16 / 9",
-      "caption": "Open the interactive Flag Studio",
-      "captionHref": "https://thisoneiseasytospell.github.io/KOZI-Playground/Flag/index.html",
-      "captionShowOn": "desktop"
+      "caption": "Custom web-tool with one click MP4, vector and JPG exports."
     },
     {
       "type": "video",
