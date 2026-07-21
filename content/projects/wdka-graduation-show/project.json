@@ -61,6 +61,15 @@
     },
     {
       "type": "video",
+      "desktopSrc": "/assets/projects/wdka-graduation-show/11-custom-embossing-plate-720.mp4",
+      "mobileSrc": "/assets/projects/wdka-graduation-show/11-custom-embossing-plate-540.mp4",
+      "poster": "/assets/projects/wdka-graduation-show/11-custom-embossing-plate-poster.webp",
+      "alt": "Close-up of the custom WdKA Graduation 2026 embossing plate",
+      "aspectRatio": "9 / 16",
+      "caption": "Custom embossing plate"
+    },
+    {
+      "type": "video",
       "desktopSrc": "/assets/projects/wdka-graduation-show/09-identity-typography-detail.mp4",
       "mobileSrc": "/assets/projects/wdka-graduation-show/09-identity-typography-detail.mp4",
       "alt": "Animated close-up of dark green WdKA Graduation typography on a pale green background",

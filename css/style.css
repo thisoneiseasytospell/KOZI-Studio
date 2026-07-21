@@ -316,8 +316,10 @@ dd {
 }
 
 .about-links .link-arrow {
+  display: inline-block;
   font-size: 1.25em;
-  line-height: 0;
+  line-height: 1;
+  vertical-align: -0.08em;
 }
 
 .client-list span {
