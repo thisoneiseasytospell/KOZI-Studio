@@ -299,6 +299,13 @@ const projectNumber = document.querySelector("[data-project-number]");
 const projectTitle = document.querySelector("[data-project-title]");
 const motionButton = document.querySelector(".motion-permission");
 const stageStatus = document.querySelector("[data-stage-status]");
+const projectSidebar = document.querySelector("[data-project-sidebar]");
+const projectSidebarList = document.querySelector("[data-project-sidebar-list]");
+const projectSidebarToggle = document.querySelector("[data-project-sidebar-toggle]");
+const projectSidebarToggleLabel = document.querySelector("[data-project-sidebar-toggle-label]");
+const projectSidebarToggleNumber = document.querySelector("[data-project-sidebar-toggle-number]");
+const projectSidebarClose = document.querySelector("[data-project-sidebar-close]");
+const projectSidebarBackdrop = document.querySelector("[data-project-sidebar-backdrop]");
 
 if (stage && frame && videos.length === 2 && projectLabel && projectNumber && projectTitle) {
   setupWorkStage().catch((error) => {
@@ -401,6 +408,11 @@ async function setupWorkStage() {
   let lastUserActivity = performance.now();
   let caseStudyActive = false;
   let stageVideoBorrowed = false;
+  let sidebarOpen = false;
+  let sidebarRestoreFocus = null;
+  let sidebarBackdropTimer = 0;
+  let pendingSidebarProject = null;
+  let sidebarPointerActive = false;
   let trailCursor = 0;
   let lastTrailTime = 0;
   let lastTrailPosition = null;
@@ -425,6 +437,411 @@ async function setupWorkStage() {
   const idleTrailMinimumDuration = 5200;
   const idleTrailMaximumDuration = 45000;
   const idleTrailRampDuration = 12000;
+
+  const compactSidebar = window.matchMedia(
+    "(max-width: 760px), (hover: none), (pointer: coarse)"
+  );
+  let sidebarHoverHue = Math.random() * 360;
+  let sidebarHoverTimer = 0;
+
+  function sidebarHslToRgb(hue, saturation, lightness) {
+    const normalizedSaturation = saturation / 100;
+    const normalizedLightness = lightness / 100;
+    const chroma =
+      (1 - Math.abs(2 * normalizedLightness - 1)) * normalizedSaturation;
+    const segment = hue / 60;
+    const secondary = chroma * (1 - Math.abs((segment % 2) - 1));
+    let red = 0;
+    let green = 0;
+    let blue = 0;
+
+    if (segment < 1) {
+      red = chroma;
+      green = secondary;
+    } else if (segment < 2) {
+      red = secondary;
+      green = chroma;
+    } else if (segment < 3) {
+      green = chroma;
+      blue = secondary;
+    } else if (segment < 4) {
+      green = secondary;
+      blue = chroma;
+    } else if (segment < 5) {
+      red = secondary;
+      blue = chroma;
+    } else {
+      red = chroma;
+      blue = secondary;
+    }
+
+    const offset = normalizedLightness - chroma / 2;
+    return [red + offset, green + offset, blue + offset];
+  }
+
+  function sidebarHoverTextColor(hue, saturation, lightness) {
+    const luminance = sidebarHslToRgb(hue, saturation, lightness)
+      .map((channel) => (
+        channel <= 0.04045
+          ? channel / 12.92
+          : Math.pow((channel + 0.055) / 1.055, 2.4)
+      ))
+      .reduce(
+        (total, channel, index) =>
+          total + channel * [0.2126, 0.7152, 0.0722][index],
+        0
+      );
+    const darkContrast = (luminance + 0.05) / 0.05;
+    const lightContrast = 1.05 / (luminance + 0.05);
+    return darkContrast >= lightContrast ? "#050505" : "#ffffff";
+  }
+
+  function setSidebarHoverColor(link) {
+    sidebarHoverHue = (sidebarHoverHue + 137.508 + (Math.random() - 0.5) * 18) % 360;
+    const previousHue = Number(link.dataset.sidebarHoverHue);
+
+    if (Number.isFinite(previousHue)) {
+      const distance = Math.abs(((sidebarHoverHue - previousHue + 540) % 360) - 180);
+
+      if (distance < 54) {
+        sidebarHoverHue = (sidebarHoverHue + 96) % 360;
+      }
+    }
+
+    const saturation = 78 + Math.random() * 12;
+    const lightness = 54 + Math.random() * 14;
+    link.dataset.sidebarHoverHue = sidebarHoverHue.toFixed(1);
+    link.style.setProperty(
+      "--sidebar-hover-color",
+      `hsl(${sidebarHoverHue.toFixed(1)}deg ${saturation.toFixed(1)}% ${lightness.toFixed(1)}%)`
+    );
+    link.style.setProperty(
+      "--sidebar-hover-text",
+      sidebarHoverTextColor(sidebarHoverHue, saturation, lightness)
+    );
+  }
+
+  function cancelSidebarPreview() {
+    window.clearTimeout(sidebarHoverTimer);
+    sidebarHoverTimer = 0;
+  }
+
+  function scheduleSidebarPreview(projectIndex) {
+    cancelSidebarPreview();
+
+    if (!hoverCapable.matches || caseStudyActive || projectIndex === currentProjectIndex) {
+      return;
+    }
+
+    sidebarHoverTimer = window.setTimeout(() => {
+      sidebarHoverTimer = 0;
+
+      if (caseStudyActive || projectIndex === currentProjectIndex) {
+        return;
+      }
+
+      lastUserActivity = performance.now();
+      switchVideo("ascending", projectIndex);
+    }, 100);
+  }
+
+  function openSidebarCase(project, { skipTransition = false } = {}) {
+    window.dispatchEvent(new CustomEvent("kozi:requestprojectopen", {
+      detail: {
+        slug: project.caseStudySlug,
+        stageSlug: project.slug,
+        project: { ...project },
+        frame: skipTransition ? null : frame,
+        video: skipTransition ? null : videos[activeSlotIndex],
+        currentTime: skipTransition ? 0 : videos[activeSlotIndex].currentTime || 0,
+        skipTransition,
+      },
+    }));
+  }
+
+  function updateSidebarMode() {
+    if (!projectSidebar) {
+      return;
+    }
+
+    if (!compactSidebar.matches) {
+      sidebarOpen = false;
+      projectSidebar.classList.remove("is-open");
+      projectSidebar.removeAttribute("aria-hidden");
+      projectSidebar.inert = false;
+      projectSidebarToggle?.setAttribute("aria-expanded", "false");
+      projectSidebarBackdrop?.classList.remove("is-visible");
+
+      if (projectSidebarBackdrop) {
+        projectSidebarBackdrop.hidden = true;
+      }
+
+      return;
+    }
+
+    projectSidebar.setAttribute("aria-hidden", String(!sidebarOpen));
+    projectSidebar.inert = !sidebarOpen;
+  }
+
+  function setSidebarOpen(open, { restoreFocus = false } = {}) {
+    if (!projectSidebar || !compactSidebar.matches) {
+      return;
+    }
+
+    window.clearTimeout(sidebarBackdropTimer);
+    sidebarOpen = open;
+    projectSidebar.classList.toggle("is-open", open);
+    projectSidebar.setAttribute("aria-hidden", String(!open));
+    projectSidebar.inert = !open;
+    projectSidebarToggle?.setAttribute("aria-expanded", String(open));
+
+    if (projectSidebarToggleLabel) {
+      projectSidebarToggleLabel.textContent = open ? "Close" : "Projects";
+    }
+
+    if (projectSidebarBackdrop) {
+      if (open) {
+        projectSidebarBackdrop.hidden = false;
+        requestAnimationFrame(() => projectSidebarBackdrop.classList.add("is-visible"));
+      } else {
+        projectSidebarBackdrop.classList.remove("is-visible");
+        sidebarBackdropTimer = window.setTimeout(() => {
+          if (!sidebarOpen) {
+            projectSidebarBackdrop.hidden = true;
+          }
+        }, reduceMotion ? 0 : 280);
+      }
+    }
+
+    if (open) {
+      sidebarRestoreFocus = document.activeElement;
+      const currentLink = projectSidebar.querySelector(
+        '[aria-current="page"], [data-preview-current="true"]'
+      );
+      requestAnimationFrame(() => (currentLink || projectSidebarClose)?.focus());
+    } else if (restoreFocus && sidebarRestoreFocus?.isConnected) {
+      sidebarRestoreFocus.focus({ preventScroll: true });
+    }
+  }
+
+  function updateSidebarActive(project) {
+    if (!projectSidebarList || !project) {
+      return;
+    }
+
+    const links = Array.from(projectSidebarList.querySelectorAll("[data-sidebar-project]"));
+    let currentLink = null;
+
+    links.forEach((link) => {
+      const current = link.dataset.sidebarProject === project.slug;
+      link.classList.toggle("is-current", current);
+
+      if (current) {
+        link.dataset.previewCurrent = "true";
+        currentLink = link;
+      } else {
+        delete link.dataset.previewCurrent;
+      }
+    });
+
+    if (projectSidebarToggleNumber) {
+      projectSidebarToggleNumber.textContent = String(project.order).padStart(2, "0");
+    }
+
+    currentLink?.scrollIntoView({ block: "nearest" });
+  }
+
+  function updateSidebarCaseActive(stageSlug = null, caseSlug = null) {
+    if (!projectSidebarList) {
+      return;
+    }
+
+    const links = Array.from(projectSidebarList.querySelectorAll("[data-sidebar-project]"));
+    let hasExactMatch = false;
+
+    links.forEach((link) => {
+      const current = Boolean(stageSlug) && link.dataset.sidebarProject === stageSlug;
+      link.classList.toggle("is-case-current", current);
+
+      if (current) {
+        hasExactMatch = true;
+        link.setAttribute("aria-current", "page");
+      } else {
+        link.removeAttribute("aria-current");
+      }
+    });
+
+    if (!hasExactMatch && caseSlug) {
+      const canonicalLink = links.find(
+        (link) => link.dataset.sidebarCase === caseSlug
+      );
+      canonicalLink?.classList.add("is-case-current");
+      canonicalLink?.setAttribute("aria-current", "page");
+    }
+  }
+
+  function buildProjectSidebar() {
+    if (
+      !projectSidebar ||
+      !projectSidebarList ||
+      !projectSidebarToggle ||
+      !projectSidebarClose ||
+      !projectSidebarBackdrop
+    ) {
+      return;
+    }
+
+    const fragment = document.createDocumentFragment();
+
+    ascendingProjectIndices.forEach((projectIndex) => {
+      const project = projects[projectIndex];
+
+      if ([5, 12].includes(project.order)) {
+        return;
+      }
+
+      const item = document.createElement("li");
+      const link = document.createElement("button");
+      const number = document.createElement("span");
+      const title = document.createElement("span");
+      item.className = "project-sidebar-item";
+      link.className = "project-sidebar-link";
+      link.type = "button";
+      link.dataset.sidebarProject = project.slug;
+      link.dataset.sidebarCase = project.caseStudySlug;
+      link.setAttribute("aria-label", `${String(project.order).padStart(2, "0")} ${project.title}`);
+      number.className = "project-sidebar-number";
+      number.textContent = String(project.order).padStart(2, "0");
+      title.className = "project-sidebar-title";
+      title.textContent = project.title;
+      link.append(number, title);
+      setSidebarHoverColor(link);
+      link.addEventListener("pointerenter", () => {
+        setSidebarHoverColor(link);
+        scheduleSidebarPreview(projectIndex);
+      });
+      link.addEventListener("pointerleave", cancelSidebarPreview);
+      link.addEventListener("focus", () => {
+        if (!link.matches(":hover")) {
+          setSidebarHoverColor(link);
+        }
+
+        scheduleSidebarPreview(projectIndex);
+      });
+      link.addEventListener("blur", cancelSidebarPreview);
+      item.append(link);
+      fragment.append(item);
+    });
+
+    projectSidebarList.replaceChildren(fragment);
+
+    projectSidebar.addEventListener("pointerenter", () => {
+      sidebarPointerActive = true;
+      resetDirectionTracking();
+    });
+    projectSidebar.addEventListener("pointerleave", () => {
+      sidebarPointerActive = false;
+      resetDirectionTracking();
+      lastUserActivity = performance.now();
+    });
+
+    projectSidebarList.addEventListener("click", (event) => {
+      const link = event.target.closest("[data-sidebar-project]");
+
+      if (!link) {
+        return;
+      }
+
+      const requestedIndex = projects.findIndex(
+        (project) => project.slug === link.dataset.sidebarProject
+      );
+      const project = projects[requestedIndex];
+
+      if (!project) {
+        return;
+      }
+
+      event.preventDefault();
+      cancelSidebarPreview();
+      lastUserActivity = performance.now();
+
+      if (caseStudyActive) {
+        pendingSidebarProject = null;
+
+        if (requestedIndex !== currentProjectIndex) {
+          switchVideo("ascending", requestedIndex, true);
+        }
+
+        openSidebarCase(project, { skipTransition: true });
+      } else if (requestedIndex === currentProjectIndex) {
+        pendingSidebarProject = null;
+        openSidebarCase(project);
+      } else {
+        pendingSidebarProject = project;
+        switchVideo("ascending", requestedIndex, true);
+      }
+
+      if (compactSidebar.matches) {
+        setSidebarOpen(false, { restoreFocus: true });
+      }
+    });
+
+    projectSidebarToggle.addEventListener("click", () => {
+      setSidebarOpen(!sidebarOpen, { restoreFocus: sidebarOpen });
+    });
+    projectSidebarClose.addEventListener("click", () => {
+      setSidebarOpen(false, { restoreFocus: true });
+    });
+    projectSidebarBackdrop.addEventListener("click", () => {
+      setSidebarOpen(false, { restoreFocus: true });
+    });
+
+    document.addEventListener("keydown", (event) => {
+      if (!sidebarOpen || !compactSidebar.matches) {
+        return;
+      }
+
+      if (event.key === "Escape") {
+        event.preventDefault();
+        setSidebarOpen(false, { restoreFocus: true });
+        return;
+      }
+
+      if (event.key !== "Tab") {
+        return;
+      }
+
+      const focusable = Array.from(
+        projectSidebar.querySelectorAll('button:not([disabled]), a[href], [tabindex]:not([tabindex="-1"])')
+      ).filter((element) => element.offsetParent !== null && !element.closest("[inert]"));
+
+      if (focusable.length === 0) {
+        return;
+      }
+
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    });
+
+    compactSidebar.addEventListener?.("change", updateSidebarMode);
+    window.addEventListener("kozi:caseprojectchange", (event) => {
+      updateSidebarCaseActive(
+        event.detail?.stageSlug || null,
+        event.detail?.slug || null
+      );
+    });
+    updateSidebarMode();
+  }
+
+  buildProjectSidebar();
 
   function videoSource(project) {
     return compactVideo.matches ? project.mobileSrc : project.desktopSrc;
@@ -534,7 +951,11 @@ async function setupWorkStage() {
   }
 
   function requestDirectionalVideo(source) {
-    if (caseStudyActive) {
+    if (
+      caseStudyActive ||
+      sidebarPointerActive ||
+      projectSidebar?.contains(document.activeElement)
+    ) {
       return false;
     }
 
@@ -709,6 +1130,7 @@ async function setupWorkStage() {
     stage.dataset.projectIndex = String(project.order);
     stage.dataset.projectTitle = project.title;
     stage.dataset.projectSlug = project.slug;
+    updateSidebarActive(project);
     frame.setAttribute("role", "button");
     frame.setAttribute("aria-haspopup", "dialog");
     frame.setAttribute("aria-label", `Open ${project.title} case study`);
@@ -730,6 +1152,16 @@ async function setupWorkStage() {
         frame,
       },
     }));
+
+    if (pendingSidebarProject?.slug === project.slug && !caseStudyActive) {
+      const pendingProject = pendingSidebarProject;
+      pendingSidebarProject = null;
+      requestAnimationFrame(() => {
+        if (!caseStudyActive && projects[currentProjectIndex]?.slug === project.slug) {
+          openSidebarCase(pendingProject);
+        }
+      });
+    }
   }
 
   function requestCaseStudyOpen() {
@@ -1209,6 +1641,10 @@ async function setupWorkStage() {
     caseStudyActive = Boolean(event.detail?.open) || caseStudyClosing;
     stage.classList.toggle("is-case-open", caseStudyActive);
     stage.classList.toggle("is-case-closing", caseStudyClosing);
+
+    if (!event.detail?.open && !caseStudyClosing) {
+      updateSidebarCaseActive();
+    }
 
     if (caseStudyActive) {
       pointerActive = false;

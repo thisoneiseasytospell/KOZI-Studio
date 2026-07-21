@@ -87,7 +87,6 @@ async function setupCaseStudies() {
   const detailRequests = new Map();
   const visibleVideos = new Set();
   const backgroundRegions = [
-    document.querySelector(".site-intro"),
     document.querySelector("main"),
   ].filter(Boolean);
   const homeMetadata = {
@@ -1309,6 +1308,7 @@ async function setupCaseStudies() {
   function finalHeroRect() {
     const heroRect = caseHero.getBoundingClientRect();
     const dialogRect = caseStudyDialog.getBoundingClientRect();
+    const layerRect = caseStudyLayer.getBoundingClientRect();
     const dialogWidth = caseStudyDialog.offsetWidth;
     const dialogHeight = caseStudyDialog.offsetHeight;
     const scale = dialogWidth > 0 ? dialogRect.width / dialogWidth : 1;
@@ -1320,8 +1320,8 @@ async function setupCaseStudies() {
     // The dialog is still translating/scaling in while this runs; project the
     // hero's rect onto the dialog's settled (centered, scale 1) geometry so
     // the ghost lands exactly where the hero will actually sit.
-    const finalLeft = (window.innerWidth - dialogWidth) / 2;
-    const finalTop = (window.innerHeight - dialogHeight) / 2;
+    const finalLeft = layerRect.left + (layerRect.width - dialogWidth) / 2;
+    const finalTop = layerRect.top + (layerRect.height - dialogHeight) / 2;
 
     return {
       left: finalLeft + (heroRect.left - dialogRect.left) / scale,
@@ -1861,7 +1861,7 @@ async function setupCaseStudies() {
     }
 
     if (direct) {
-      caseStudyClose.focus({ preventScroll: true });
+      caseStudyEscape.focus({ preventScroll: true });
     }
   }
 
@@ -1936,10 +1936,12 @@ async function setupCaseStudies() {
       return;
     }
 
-    const useOriginVideo = !replacingProject && canBorrowOriginVideo(project, origin);
+    const transitionOrigin = origin?.skipTransition ? null : origin;
+    const useOriginVideo =
+      !replacingProject && canBorrowOriginVideo(project, transitionOrigin);
 
     if (!replacingProject && !openingFromWorkIndex) {
-      prepareLayer({ origin, preserveStageVideo: useOriginVideo });
+      prepareLayer({ origin: transitionOrigin, preserveStageVideo: useOriginVideo });
     } else if (openingFromWorkIndex) {
       caseStudyDialog.setAttribute("aria-busy", "true");
     }
@@ -1949,7 +1951,7 @@ async function setupCaseStudies() {
       : renderProject(project, {
           currentTime,
           useOriginVideo,
-          snapExpansion: Boolean(origin) && !openingFromWorkIndex,
+          snapExpansion: Boolean(transitionOrigin) && !openingFromWorkIndex,
         });
 
     if (token !== loadToken || !activeItem) {
@@ -1966,11 +1968,17 @@ async function setupCaseStudies() {
     window.dispatchEvent(new CustomEvent("kozi:requeststageproject", {
       detail: { slug: origin?.stageSlug || slug },
     }));
+    window.dispatchEvent(new CustomEvent("kozi:caseprojectchange", {
+      detail: {
+        slug,
+        stageSlug: origin?.stageSlug || slug,
+      },
+    }));
     caseStatus.textContent = `${project.title} case study opened.`;
 
-    if (origin) {
+    if (transitionOrigin) {
       await animateThumbnailIntoHero({
-        ...origin,
+        ...transitionOrigin,
         currentTime,
         reuseVideo: useOriginVideo,
       });
@@ -1980,10 +1988,10 @@ async function setupCaseStudies() {
 
     if (replacingProject) {
       finishProjectSwitch();
-    } else if (direct || !origin) {
-      caseStudyClose.focus({ preventScroll: true });
+    } else if (direct || !transitionOrigin) {
+      caseStudyEscape.focus({ preventScroll: true });
     } else {
-      window.setTimeout(() => caseStudyClose.focus({ preventScroll: true }), 40);
+      window.setTimeout(() => caseStudyEscape.focus({ preventScroll: true }), 40);
     }
   }
 
@@ -2230,37 +2238,6 @@ async function setupCaseStudies() {
       return;
     }
 
-    if (event.key !== "Tab") {
-      return;
-    }
-
-    const focusable = Array.from(
-      caseStudyDialog.querySelectorAll(
-        'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])'
-      )
-    ).filter((element) =>
-      !element.hidden &&
-      element.offsetParent !== null &&
-      !element.closest("[inert]") &&
-      element.getClientRects().length > 0
-    );
-
-    if (focusable.length === 0) {
-      event.preventDefault();
-      caseStudyDialog.focus();
-      return;
-    }
-
-    const first = focusable[0];
-    const last = focusable[focusable.length - 1];
-
-    if (event.shiftKey && document.activeElement === first) {
-      event.preventDefault();
-      last.focus();
-    } else if (!event.shiftKey && document.activeElement === last) {
-      event.preventDefault();
-      first.focus();
-    }
   });
 
   window.addEventListener("kozi:requestprojectopen", (event) => {
@@ -2270,9 +2247,12 @@ async function setupCaseStudies() {
       return;
     }
 
-    openedFromHomepage = true;
-    openedFromWorkIndex = false;
-    caseHistoryDepth = 0;
+    if (!isOpen) {
+      openedFromWorkIndex = isWorkIndexLocation();
+      openedFromHomepage = !openedFromWorkIndex;
+      caseHistoryDepth = 0;
+    }
+
     openProject(slug, {
       origin: event.detail,
       currentTime: event.detail.currentTime,
@@ -2296,7 +2276,8 @@ async function setupCaseStudies() {
     }
 
     if (isWorkIndexLocation()) {
-      openWorkIndex();
+      updateWorkMetadata();
+      finishClose();
       return;
     }
 
@@ -2351,7 +2332,7 @@ async function setupCaseStudies() {
 
   if (initialWorkIndex) {
     history.replaceState({ koziView: "work" }, "", "/work/");
-    openWorkIndex({ direct: true });
+    document.body.classList.add("case-boot-done");
   } else if (initialSlug && projectForSlug(initialSlug)) {
     openedFromHomepage = false;
     openedFromWorkIndex = false;

@@ -87,7 +87,7 @@ At the centre of the identity was a custom research and asset-generation tool I 
         }
       } catch (error) {}
     </script>
-    <link rel="stylesheet" href="./css/style.css?v=99">
+    <link rel="stylesheet" href="./css/style.css?v=106">
     <noscript>
       <style>
         body::after {
@@ -95,8 +95,8 @@ At the centre of the identity was a custom research and asset-generation tool I 
         }
       </style>
     </noscript>
-    <script src="./js/app.js?v=58" defer></script>
-    <script src="./js/case-study.js?v=59" defer></script>
+    <script src="./js/app.js?v=65" defer></script>
+    <script src="./js/case-study.js?v=63" defer></script>
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",
@@ -115,7 +115,8 @@ At the centre of the identity was a custom research and asset-generation tool I 
     </script>
   </head>
   <body id="top" data-initial-project="wdka-graduation-show">
-    <header class="site-intro" id="about">
+    <div class="site-sidebar-shell">
+      <header class="site-intro" id="about">
       <h1 class="visually-hidden">KOZI Studio, Albert Kozikowski</h1>
       <div class="intro-shell" data-intro-shell>
         <button
@@ -177,7 +178,35 @@ At the centre of the identity was a custom research and asset-generation tool I 
       <p class="rtm-clock" data-rtm-clock>
         <span class="rtm-clock-location">RTM, NL</span><time data-rtm-time><span data-rtm-hour>00</span><span class="rtm-clock-colon">:</span><span data-rtm-minute>00</span></time>
       </p>
-    </header>
+      </header>
+
+      <button
+        class="project-sidebar-toggle"
+        type="button"
+        data-project-sidebar-toggle
+        aria-expanded="false"
+        aria-controls="project-sidebar"
+      >
+        <span data-project-sidebar-toggle-label>Projects</span>
+        <span data-project-sidebar-toggle-number aria-hidden="true"></span>
+      </button>
+
+      <div class="project-sidebar-backdrop" data-project-sidebar-backdrop hidden></div>
+      <aside
+        class="project-sidebar"
+        id="project-sidebar"
+        data-project-sidebar
+        aria-label="Selected projects"
+      >
+        <div class="project-sidebar-heading">
+          <span>Selected work</span>
+          <button type="button" data-project-sidebar-close>close</button>
+        </div>
+        <nav class="project-sidebar-nav" aria-label="Project previews">
+          <ol data-project-sidebar-list></ol>
+        </nav>
+      </aside>
+    </div>
 
     <main>
       <section class="work-stage is-loading" id="work" aria-label="Selected work" aria-busy="true">
@@ -206,7 +235,7 @@ At the centre of the identity was a custom research and asset-generation tool I 
         class="case-study-dialog"
         data-case-study-dialog
         role="dialog"
-        aria-modal="true"
+        aria-modal="false"
         aria-labelledby="case-study-title"
         tabindex="-1"
       >
@@ -216,7 +245,7 @@ At the centre of the identity was a custom research and asset-generation tool I 
           data-case-escape
           aria-label="Close case study"
         >
-          esc
+          &times;
         </button>
 
         <div class="case-study-scroll" data-case-scroll>

@@ -20,6 +20,7 @@
   --glass-pad: 16px;
   --info-gap: 12px;
   --page-pad: 16px;
+  --sidebar-width: clamp(224px, 22vw, 300px);
   --reveal-ease: cubic-bezier(0.19, 1, 0.22, 1);
   --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
   --ghost-flight-ease: cubic-bezier(0.32, 0.72, 0, 1);
@@ -162,6 +163,52 @@ dd {
   z-index: 10;
 }
 
+.site-sidebar-shell {
+  background: var(--bg);
+  border: 0;
+  display: flex;
+  flex-direction: column;
+  font-family: "ABC Diatype", Arial, sans-serif;
+  font-size: 12px;
+  inset: 0 auto 0 0;
+  position: fixed;
+  width: var(--sidebar-width);
+  z-index: 110;
+}
+
+@media (min-width: 761px) and (hover: hover) {
+  .site-intro {
+    flex: 0 1 auto;
+    max-width: var(--sidebar-width);
+    width: var(--sidebar-width);
+    z-index: 121;
+  }
+
+  .site-intro.is-expanded {
+    max-height: calc(100svh - 152px);
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: none;
+  }
+
+  .site-intro.is-expanded::-webkit-scrollbar {
+    display: none;
+  }
+
+  .site-sidebar-shell .intro-shell {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    background: transparent;
+    max-width: 100%;
+    width: 100%;
+  }
+
+  .project-label {
+    display: none;
+  }
+}
+
 .intro-shell {
   -webkit-backdrop-filter: blur(8px);
   backdrop-filter: blur(8px);
@@ -231,7 +278,7 @@ dd {
 
 .intro-follow {
   color: var(--intro-text);
-  font-size: 0.9em;
+  font-size: inherit;
   left: 0;
   opacity: 0;
   pointer-events: none;
@@ -317,7 +364,7 @@ dd {
 
 .about-links .link-arrow {
   display: inline-block;
-  font-size: 1.25em;
+  font-size: inherit;
   line-height: 1;
   vertical-align: -0.08em;
 }
@@ -343,7 +390,7 @@ dd {
   background: transparent;
   border: 0;
   cursor: pointer;
-  font-size: 0.9em;
+  font-size: inherit;
   padding: 0;
   text-align: left;
   width: max-content;
@@ -433,11 +480,117 @@ dd {
 }
 
 main {
-  inset: 0;
+  inset: 0 0 0 var(--sidebar-width);
   min-height: 0;
   overflow: hidden;
   position: fixed;
   z-index: 0;
+}
+
+.project-sidebar {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  inset: auto;
+  min-height: 120px;
+  padding: 0 0 42px;
+  position: relative;
+  width: 100%;
+}
+
+.project-sidebar-heading {
+  display: none;
+}
+
+.project-sidebar-nav {
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-color: rgb(var(--text-rgb) / 0.24) transparent;
+  scrollbar-width: thin;
+}
+
+.project-sidebar-nav ol {
+  list-style: none;
+}
+
+.project-sidebar-link {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  color: var(--text);
+  cursor: pointer;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: 30px minmax(0, 1fr);
+  isolation: isolate;
+  line-height: 1;
+  overflow: hidden;
+  padding: 5px var(--page-pad) 6px;
+  position: relative;
+  text-align: left;
+  width: 100%;
+}
+
+.project-sidebar-link::before {
+  background: var(--sidebar-hover-color, hsl(340deg 80% 62%));
+  content: "";
+  inset: 0;
+  opacity: 0;
+  pointer-events: none;
+  position: absolute;
+  z-index: 0;
+}
+
+.project-sidebar-link:focus-visible {
+  outline: 1px solid currentColor;
+  outline-offset: -1px;
+}
+
+.project-sidebar-link[aria-current="page"] {
+  background: var(--text);
+  color: var(--bg);
+}
+
+.project-sidebar-number {
+  font-variant-numeric: tabular-nums;
+  position: relative;
+  z-index: 1;
+}
+
+.project-sidebar-title {
+  min-width: 0;
+  overflow: hidden;
+  padding-bottom: 1px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  position: relative;
+  z-index: 1;
+}
+
+.project-sidebar-link:focus-visible:not([aria-current="page"]) {
+  color: var(--sidebar-hover-text, var(--text));
+}
+
+.project-sidebar-link:focus-visible:not([aria-current="page"])::before {
+  opacity: 1;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .project-sidebar-link:hover:not([aria-current="page"]) {
+    color: var(--sidebar-hover-text, var(--text));
+    text-decoration: none;
+  }
+
+  .project-sidebar-link:hover:not([aria-current="page"])::before {
+    opacity: 1;
+  }
+}
+
+.project-sidebar-toggle,
+.project-sidebar-backdrop {
+  display: none;
 }
 
 .work-stage {
@@ -637,6 +790,109 @@ main {
 }
 
 @media (max-width: 760px), (hover: none) {
+  .site-sidebar-shell {
+    display: contents;
+  }
+
+  main {
+    left: 0;
+  }
+
+  .project-sidebar {
+    background: var(--bg);
+    border-right: 0;
+    bottom: 0;
+    max-width: 360px;
+    padding: var(--page-pad);
+    position: fixed;
+    top: 0;
+    transform: translate3d(-100%, 0, 0);
+    transition: transform 420ms var(--reveal-ease);
+    width: min(88vw, 360px);
+    z-index: 140;
+  }
+
+  .project-sidebar.is-open {
+    transform: translate3d(0, 0, 0);
+  }
+
+  .project-sidebar-heading {
+    align-items: center;
+    display: flex;
+    justify-content: space-between;
+    min-height: 36px;
+    padding: 0 7px 8px;
+  }
+
+  .project-sidebar-heading button {
+    background: transparent;
+    border: 0;
+    cursor: pointer;
+    padding: 6px 0 7px 12px;
+  }
+
+  .project-sidebar-heading button:hover,
+  .project-sidebar-heading button:focus-visible {
+    opacity: 0.52;
+    outline: 0;
+  }
+
+  .project-sidebar-nav {
+    flex: 1;
+  }
+
+  .project-sidebar-link {
+    min-height: 44px;
+    padding: 12px 7px 13px;
+  }
+
+  .project-sidebar-toggle {
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
+    align-items: center;
+    background: rgb(var(--bg-rgb) / 0.72);
+    border: 0;
+    border-radius: 999px;
+    bottom: var(--page-pad);
+    color: var(--text);
+    cursor: pointer;
+    display: flex;
+    gap: 8px;
+    left: var(--page-pad);
+    min-height: 40px;
+    padding: 0 12px;
+    position: fixed;
+    z-index: 150;
+  }
+
+  .project-sidebar-toggle:focus-visible {
+    outline: 1px solid currentColor;
+    outline-offset: 3px;
+  }
+
+  .project-sidebar-toggle [data-project-sidebar-toggle-number]:not(:empty)::before {
+    content: "\00b7";
+    margin-right: 8px;
+  }
+
+  .project-sidebar-backdrop {
+    background: rgb(var(--text-rgb) / 0.18);
+    display: block;
+    inset: 0;
+    opacity: 0;
+    position: fixed;
+    transition: opacity 280ms linear;
+    z-index: 139;
+  }
+
+  .project-sidebar-backdrop.is-visible {
+    opacity: 1;
+  }
+
+  .project-sidebar-backdrop[hidden] {
+    display: none;
+  }
+
   .site-intro {
     max-height: 100%;
   }
@@ -712,7 +968,7 @@ main {
   }
 
   .rtm-clock {
-    font-size: 0.9em;
+    font-size: inherit;
   }
 
 }
@@ -726,6 +982,11 @@ main {
   .copyright,
   .rtm-clock {
     transition-delay: 0ms !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  .project-sidebar,
+  .project-sidebar-backdrop {
     transition-duration: 0.01ms !important;
   }
 
@@ -764,7 +1025,8 @@ main {
   --case-switch-expand: 280ms;
   --case-switch-ease: cubic-bezier(0.22, 1, 0.36, 1);
   font-size: 12px;
-  inset: 0;
+  font-family: "ABC Diatype", Arial, sans-serif;
+  inset: 0 0 0 var(--sidebar-width);
   isolation: isolate;
   position: fixed;
   z-index: 100;
@@ -797,7 +1059,7 @@ main {
     opacity 420ms var(--ease-standard),
     filter 560ms var(--ease-standard),
     transform 560ms var(--ease-standard);
-  width: calc(100vw - 32px);
+  width: calc(100% - 32px);
 }
 
 .case-study-layer.is-open .case-study-backdrop {
@@ -840,13 +1102,18 @@ main {
   color: rgb(var(--text-rgb) / 0.52);
   cursor: pointer;
   display: grid;
+  font-family: inherit;
+  font-size: 24px;
+  left: 50%;
   line-height: 1;
-  min-height: 32px;
+  min-height: 44px;
+  min-width: 44px;
   place-items: center;
-  padding: 7px 9px 8px;
+  padding: 0;
   position: absolute;
-  right: calc(var(--case-inset) - 9px);
-  top: calc(var(--case-inset) - 7px);
+  right: auto;
+  top: 4px;
+  transform: translateX(-50%);
   transition: color 180ms linear;
   z-index: 12;
 }
@@ -921,7 +1188,10 @@ main {
 
 .case-study-article {
   min-height: 100%;
-  padding: var(--case-inset);
+  padding:
+    calc(var(--case-inset) + 28px)
+    var(--case-inset)
+    var(--case-inset);
 }
 
 .case-study-content {
@@ -1139,9 +1409,9 @@ main {
 }
 
 .case-study-recognition-mark {
-  font-size: 17px;
-  font-weight: 600;
-  letter-spacing: -0.04em;
+  font-size: inherit;
+  font-weight: inherit;
+  letter-spacing: inherit;
 }
 
 .case-study-services ul {
@@ -1405,7 +1675,7 @@ main {
   align-items: center;
   background: var(--bg);
   color: rgb(var(--text-rgb) / 0.52);
-  display: flex;
+  display: none;
   margin:
     calc(-1 * var(--case-inset))
     calc(-1 * var(--case-inset))
@@ -1485,7 +1755,7 @@ main {
 .case-study-project-tags {
   align-items: center;
   display: flex;
-  font-size: 10px;
+  font-size: inherit;
   gap: 4px;
   justify-self: end;
   opacity: 0.52;
@@ -1517,7 +1787,7 @@ main {
 
 .case-study-project-tag-icon {
   display: block;
-  font-size: 9px;
+  font-size: inherit;
   line-height: 1;
   transform: translateY(-0.25px);
 }
@@ -1610,6 +1880,12 @@ main {
   transition-duration: var(--case-switch-expand);
 }
 
+/* The persistent sidebar is the visible project navigation. These internal
+   controls remain as the case-content transition structure only. */
+.case-study-project-item > .case-study-project-link {
+  display: none;
+}
+
 .case-study-transition-ghost {
   background: transparent;
   border-radius: 0;
@@ -1645,6 +1921,7 @@ main {
   .case-study-layer {
     --case-pad: 10px;
     --case-inset: 16px;
+    left: 0;
   }
 
   .case-study-backdrop,
@@ -1671,8 +1948,9 @@ main {
   }
 
   .case-study-escape {
-    right: calc(var(--case-inset) - 9px);
-    top: calc(var(--case-inset) - 7px);
+    left: 50%;
+    right: auto;
+    top: 2px;
   }
 
   .case-study-heading {
