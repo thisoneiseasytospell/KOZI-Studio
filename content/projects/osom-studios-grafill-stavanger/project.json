@@ -2,16 +2,30 @@
   "schemaVersion": 1,
   "slug": "osom-studios-grafill-stavanger",
   "order": 14,
-  "title": "Osom Studios / Grafill Stavanger",
-  "wip": true,
-  "summary": "",
-  "services": [],
+  "title": "DIA Studio + Osom Studios / Grafill Stavanger",
+  "wip": false,
+  "summary": "I created talk visualizers for DIA Studio and Osom Studios’ talks for Grafill Stavanger.",
+  "tags": [
+    "Graphic",
+    "Motion"
+  ],
+  "services": [
+    "Motion Design"
+  ],
   "credits": [],
   "hero": {
-    "desktopSrc": "/assets/videos/optimized/15-Osom-Studios-Grafill-Stavanger-1440-v1-36cb8a71ea.mp4",
-    "mobileSrc": "/assets/videos/optimized/15-Osom-Studios-Grafill-Stavanger-960-v1-36cb8a71ea.mp4",
-    "alt": "Osom Studios motion project for Grafill Stavanger",
+    "desktopSrc": "/assets/videos/optimized/16-optim-DIA-Studio-Grafill-1440-v1-197a5074ec.mp4",
+    "mobileSrc": "/assets/videos/optimized/16-optim-DIA-Studio-Grafill-960-v1-197a5074ec.mp4",
+    "alt": "DIA Studio talk visualizer for Grafill Stavanger",
     "aspectRatio": "16 / 9"
   },
-  "media": []
+  "media": [
+    {
+      "type": "video",
+      "desktopSrc": "/assets/videos/optimized/15-Osom-Studios-Grafill-Stavanger-1440-v1-36cb8a71ea.mp4",
+      "mobileSrc": "/assets/videos/optimized/15-Osom-Studios-Grafill-Stavanger-960-v1-36cb8a71ea.mp4",
+      "alt": "Osom Studios talk visualizer for Grafill Stavanger",
+      "aspectRatio": "16 / 9"
+    }
+  ]
 }

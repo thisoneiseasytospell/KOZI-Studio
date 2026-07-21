@@ -57,6 +57,24 @@
       "alt": "Blue and yellow glazed ceramic Totems arranged in a workshop"
     },
     {
+      "type": "image",
+      "src": "/assets/projects/010-totems/05-mountain-cyclists.webp",
+      "alt": "Blue-and-white ceramic Totem of cyclists climbing over a mountain bridge"
+    },
+    {
+      "type": "image",
+      "src": "/assets/projects/010-totems/06-triple-bike.webp",
+      "alt": "Blue-and-white ceramic Totem of three people riding one bicycle"
+    },
+    {
+      "type": "video",
+      "desktopSrc": "/assets/projects/010-totems/04-window-totem-animation.mp4",
+      "mobileSrc": "/assets/projects/010-totems/04-window-totem-animation.mp4",
+      "poster": "/assets/projects/010-totems/04-window-totem-animation-poster.webp",
+      "alt": "Animated blue-and-white ceramic Totem of a person climbing through a window with a bin bag",
+      "aspectRatio": "1 / 1"
+    },
+    {
       "type": "video",
       "desktopSrc": "/assets/projects/010-totems/05-mobile-totem-720.mp4",
       "mobileSrc": "/assets/projects/010-totems/05-mobile-totem-540.mp4",

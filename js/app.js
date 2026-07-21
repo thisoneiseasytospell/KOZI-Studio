@@ -310,7 +310,7 @@ if (stage && frame && videos.length === 2 && projectLabel && projectNumber && pr
 }
 
 async function setupWorkStage() {
-  const response = await fetch("./assets/projects/index.json?v=6");
+  const response = await fetch("./assets/projects/index.json?v=7");
 
   if (!response.ok) {
     throw new Error(`Unable to load video manifest: ${response.status}`);

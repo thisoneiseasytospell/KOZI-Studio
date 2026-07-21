@@ -1,0 +1,43 @@
+{
+  "schemaVersion": 1,
+  "slug": "selection-simplifier",
+  "order": 16,
+  "title": "Selection Simplifier",
+  "wip": false,
+  "summary": "Selection Simplifier started with a simple idea: make difficult writing easier to understand without disrupting the act of reading. I conceived a browser extension that turns any selected passage into plain English using the GPT API, returning a clearer version directly in context.",
+  "tags": [
+    "AI",
+    "Code",
+    "Tool"
+  ],
+  "services": [
+    "Concept",
+    "Interaction Design",
+    "Prototyping"
+  ],
+  "credits": [],
+  "hero": {
+    "desktopSrc": "/assets/projects/selection-simplifier/selection-simplifier-hero.mp4",
+    "mobileSrc": "/assets/projects/selection-simplifier/selection-simplifier-hero.mp4",
+    "alt": "Dense writing transforming into a shorter plain-English passage",
+    "aspectRatio": "300 / 169"
+  },
+  "media": [
+    {
+      "type": "video",
+      "desktopSrc": "/assets/projects/selection-simplifier/browser-extension-demo-500.mp4",
+      "mobileSrc": "/assets/projects/selection-simplifier/browser-extension-demo-500.mp4",
+      "poster": "/assets/projects/selection-simplifier/browser-extension-demo-500-poster.webp",
+      "alt": "Browser extension simplifying selected text into plain English",
+      "aspectRatio": "1 / 1"
+    },
+    {
+      "type": "video",
+      "desktopSrc": "/assets/projects/selection-simplifier/plain-english-comparison.mp4",
+      "mobileSrc": "/assets/projects/selection-simplifier/plain-english-comparison.mp4",
+      "poster": "/assets/projects/selection-simplifier/plain-english-comparison-poster.webp",
+      "alt": "Original complex passage transitioning into a shorter plain-English version",
+      "aspectRatio": "50 / 31"
+    }
+  ]
+}

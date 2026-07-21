@@ -65,7 +65,7 @@ async function setupCaseStudies() {
   const ghostCloseEase =
     rootMotionStyles.getPropertyValue("--intro-collapse-ease").trim() ||
     "cubic-bezier(0.65, 0, 0.35, 1)";
-  const response = await fetch("/assets/projects/index.json?v=6");
+  const response = await fetch("/assets/projects/index.json?v=7");
 
   if (!response.ok) {
     throw new Error(`Unable to load project index: ${response.status}`);
